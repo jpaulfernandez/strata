@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
@@ -45,11 +45,15 @@ export default function CreateEventPage() {
     setSlug(value)
   }, [])
 
+  const formRef = useRef<HTMLFormElement>(null)
+
   async function handleSubmit(status: "draft" | "open") {
+    if (!formRef.current) return
+
     setIsSubmitting(true)
     setErrors({})
 
-    const formData = new FormData(document.querySelector("form") as HTMLFormElement)
+    const formData = new FormData(formRef.current)
 
     const input: EventDetailsInput = {
       title: title.trim(),
@@ -101,7 +105,7 @@ export default function CreateEventPage() {
           Set up a new event for registration
         </p>
 
-        <form>
+        <form ref={formRef}>
           {errors.form && (
             <div className="mb-6 p-3 rounded-lg bg-red-50 text-red-600 text-sm">
               {errors.form}
@@ -257,7 +261,6 @@ export default function CreateEventPage() {
             </Link>
             <Button
               type="button"
-              variant="secondary"
               onClick={() => handleSubmit("draft")}
               disabled={isSubmitting}
             >
@@ -265,6 +268,7 @@ export default function CreateEventPage() {
             </Button>
             <Button
               type="button"
+              variant="secondary"
               onClick={() => handleSubmit("open")}
               disabled={isSubmitting}
             >

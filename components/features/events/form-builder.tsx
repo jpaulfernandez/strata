@@ -458,10 +458,10 @@ export function FormBuilder({
     () => new Set(initialFormFields.map(f => f.id))
   )
   const [orderedGlobalIds, setOrderedGlobalIds] = React.useState<string[]>(
-    () => initialFormFields.sort((a, b) => a.order - b.order).map(f => f.id)
+    () => [...initialFormFields].sort((a, b) => a.order - b.order).map(f => f.id)
   )
   const [customQuestions, setCustomQuestions] = React.useState<CustomQuestion[]>(
-    () => initialCustomQuestions.sort((a, b) => a.order - b.order)
+    () => [...initialCustomQuestions].sort((a, b) => a.order - b.order)
   )
   const [isQuestionDialogOpen, setIsQuestionDialogOpen] = React.useState(false)
   const [editingQuestion, setEditingQuestion] = React.useState<CustomQuestion | null>(null)

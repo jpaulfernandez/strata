@@ -13,10 +13,12 @@ Always keep these files in sync:
 | `master_plan.md` | Features, milestones, and progress tracking             |
 | `bugs.md`        | Log of all discovered and resolved bugs                 |
 | `DESIGN.md`      | Design system — colors, typography, spacing, components |
+| `codebase.md`    | Source of truth for code architecture and structure     |
 
 - After every task, update `master_plan.md` with what was completed, what is in progress, and what is next.
 - When a bug is found, log it in `bugs.md` immediately with description, steps to reproduce, severity, and status.
 - Before writing any UI code, read `DESIGN.md` and follow it. Do not introduce colors, tokens, or patterns not already defined there.
+- When adding new files, routes, components, or significant code changes, update `codebase.md` to reflect the new architecture.
 
 ---
 
@@ -208,9 +210,10 @@ Never delete bug entries. Mark them as Resolved when fixed.
 Before starting:
 
 1. Read `master_plan.md` to understand current state and priorities.
-2. Read `DESIGN.md` if the task involves UI.
-3. Check `bugs.md` for related known issues.
+2. Read `codebase.md` for architectural context and codebase structure.
+3. Read `DESIGN.md` if the task involves UI.
+4. Check `bugs.md` for related known issues.
 
-While working: 4. Follow the practices in this file. 5. Log any newly discovered bugs in `bugs.md` immediately.
+While working: 5. Follow the practices in this file. 6. Log any newly discovered bugs in `bugs.md` immediately.
 
-After completing: 6. Update `master_plan.md` with progress. 7. Confirm ESLint and tests pass. 8. Update `bugs.md` if any bugs were resolved.
+After completing: 7. Update `master_plan.md` with progress. 8. Confirm ESLint and tests pass. 9. Update `bugs.md` if any bugs were resolved. 10. Update `codebase.md` if new routes, components, or significant code patterns were added.

@@ -6,6 +6,7 @@ import {
   boolean,
   jsonb,
   pgEnum,
+  index,
 } from "drizzle-orm/pg-core";
 
 // Enums
@@ -36,6 +37,7 @@ export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   fullName: text("full_name").notNull(),
   email: text("email").notNull().unique(),
+  password: text("password"),
   role: userRoleEnum("role").default("admin").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -142,3 +144,28 @@ export type VipNotification = typeof vipNotifications.$inferSelect;
 export type NewVipNotification = typeof vipNotifications.$inferInsert;
 export type GlobalField = typeof globalFields.$inferSelect;
 export type NewGlobalField = typeof globalFields.$inferInsert;
+
+// Indexes for events table
+export const eventsSlugIdx = index("events_slug_idx").on(events.slug);
+export const eventsStatusIdx = index("events_status_idx").on(events.status);
+export const eventsCreatedByIdx = index("events_created_by_idx").on(events.createdBy);
+export const eventsEventDateIdx = index("events_event_date_idx").on(events.eventDate);
+
+// Indexes for registrants table
+export const registrantsEventIdIdx = index("registrants_event_id_idx").on(registrants.eventId);
+export const registrantsEmailIdx = index("registrants_email_idx").on(registrants.email);
+export const registrantsQrTokenIdx = index("registrants_qr_token_idx").on(registrants.qrToken);
+export const registrantsCheckedInIdx = index("registrants_checked_in_idx").on(registrants.checkedIn);
+
+// Indexes for checkins table
+export const checkinsRegistrantIdIdx = index("checkins_registrant_id_idx").on(checkins.registrantId);
+export const checkinsEventIdIdx = index("checkins_event_id_idx").on(checkins.eventId);
+export const checkinsScannedAtIdx = index("checkins_scanned_at_idx").on(checkins.scannedAt);
+
+// Indexes for vipNotifications table
+export const vipNotificationsEventIdIdx = index("vip_notifications_event_id_idx").on(vipNotifications.eventId);
+export const vipNotificationsRegistrantIdIdx = index("vip_notifications_registrant_id_idx").on(vipNotifications.registrantId);
+export const vipNotificationsAcknowledgedIdx = index("vip_notifications_acknowledged_idx").on(vipNotifications.acknowledged);
+
+// Indexes for globalFields table
+export const globalFieldsCreatedByIdx = index("global_fields_created_by_idx").on(globalFields.createdBy);

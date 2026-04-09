@@ -63,3 +63,21 @@ export function getInitials(firstName: string, lastName: string): string {
   const last = lastName?.trim()?.charAt(0)?.toUpperCase() ?? "";
   return `${first}${last}`;
 }
+
+/**
+ * Convert Zod validation errors to a simple object
+ */
+export function zodErrorToFormErrors(error: any): Record<string, string> {
+  const errors: Record<string, string> = {};
+
+  if (error?.issues) {
+    for (const issue of error.issues) {
+      const path = issue.path.join(".");
+      if (path && !errors[path]) {
+        errors[path] = issue.message;
+      }
+    }
+  }
+
+  return errors;
+}
