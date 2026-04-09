@@ -3,12 +3,13 @@
 import { db } from "@/lib/db"
 import {
   events,
+  registrants,
   type Event,
   type NewEvent,
   type FormFieldConfig,
   type CustomQuestion,
 } from "@/lib/db/schema"
-import { eq, desc } from "drizzle-orm"
+import { eq, desc, count } from "drizzle-orm"
 import { requireRole } from "@/server/auth/rbac"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
@@ -89,6 +90,25 @@ export async function getEvent(id: string): Promise<Event | null> {
   } catch (error) {
     console.error("Error fetching event:", error)
     return null
+  }
+}
+
+/**
+ * Get registrant count for an event (requires admin role)
+ */
+export async function getRegistrantCount(eventId: string): Promise<number> {
+  await requireRole("admin")
+
+  try {
+    const [result] = await db
+      .select({ count: count() })
+      .from(registrants)
+      .where(eq(registrants.eventId, eventId))
+
+    return result?.count ?? 0
+  } catch (error) {
+    console.error("Error fetching registrant count:", error)
+    return 0
   }
 }
 

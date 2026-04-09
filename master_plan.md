@@ -58,14 +58,14 @@
 - **Completed**:
   - [x] Task 4.1: Event List Page
   - [x] Task 4.2: Create Event Page
+  - [x] Task 4.3: Edit Event Page
 - **In progress**:
-  - [ ] Task 4.3: Edit Event Page
   - [ ] Task 5: Form Builder (4.4-4.6)
 - **Remaining**:
   - [ ] Task 4.7: Share Panel
   - [ ] Task 4.8: Duplicate Event Action
   - [ ] Task 4.9: Event Status Toggle
-- **Notes**: Event list and create pages implemented. Server actions for events CRUD created with Zod validation.
+- **Notes**: Event list, create, and edit pages implemented. Server actions for events CRUD created with Zod validation. Edit page includes duplicate functionality, read-only created date and registrant count.
 
 ---
 

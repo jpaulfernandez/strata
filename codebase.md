@@ -167,6 +167,7 @@ Route protection is enforced in `app/middleware.ts`:
 | `/admin` | Admin dashboard |
 | `/admin/events` | Event list |
 | `/admin/events/new` | Create new event |
+| `/admin/events/[id]/edit` | Edit existing event |
 | `/admin/settings` | App settings |
 | `/admin/settings/fields` | Global form fields |
 | `/admin/settings/fields/new` | Create global field |
