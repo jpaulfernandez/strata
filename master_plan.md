@@ -18,18 +18,54 @@
   - [x] Task 6.2: QR Code Generation Utility
 - **Notes**: Next.js 14 with App Router, Drizzle ORM, Tailwind with DESIGN.md tokens, all 6 database tables created
 
-### 🟡 Wave 2 — Auth Layer (Not Started)
+### 🟢 Wave 2 — Auth Layer (Complete)
 
-- **Status**: Not Started
-- **Blocked by**: Wave 1 complete
+- **Status**: Complete
+- **Last updated**: 2026-04-09
+- **Completed**:
+  - [x] Task 1.3: Database Indexes
+  - [x] Task 1.4: better-auth Configuration
+  - [x] Task 2.1: better-auth API Route Handler
+  - [x] Task 2.2: Login Page & Auth Actions
+  - [x] Task 2.3: Auth Middleware
+  - [x] Task 2.4: Role-Based Access Control
+  - [x] Task 2.5: User Role Initialization
+- **Notes**: Full auth layer implemented - email/password auth, session management, role-based access control, middleware protection
+
+---
+
+### 🔵 Wave 3 — Settings (Complete)
+
+- **Status**: Complete
+- **Last updated**: 2026-04-09
+- **Completed**:
+  - [x] Task 3.1: Settings Layout & Navigation
+  - [x] Task 3.2: Global Fields List UI (client component with CRUD)
+  - [x] Task 3.3: Create Global Field Form
+  - [x] Task 3.4: Delete Global Field Action
+  - [x] Task 3.5: Staff List UI (client component)
+  - [x] Task 3.6: Invite Staff Form (stub)
+  - [x] Task 3.7: Edit User Role Action
+  - [x] Task 3.8: Remove Staff Account Action
+- **Notes**: All settings pages implemented as client components for runtime data loading. UI components built following DESIGN.md tokens.
+
+---
+
+### 🟡 Wave 4 — Event CRUD (In Progress)
+
+- **Status**: In Progress
+- **Last updated**: 2026-04-09
+- **Completed**:
+  - [x] Task 4.1: Event List Page
+  - [x] Task 4.2: Create Event Page
+- **In progress**:
+  - [ ] Task 4.3: Edit Event Page
+  - [ ] Task 5: Form Builder (4.4-4.6)
 - **Remaining**:
-  - [ ] Task 1.3: Database Indexes
-  - [ ] Task 1.4: better-auth Configuration
-  - [ ] Task 2.1: better-auth Configuration
-  - [ ] Task 2.2: Login Page & Auth Actions
-  - [ ] Task 2.3: Auth Middleware
-  - [ ] Task 2.4: Role-Based Access Control
-  - [ ] Task 2.5: User Role Initialization
+  - [ ] Task 4.7: Share Panel
+  - [ ] Task 4.8: Duplicate Event Action
+  - [ ] Task 4.9: Event Status Toggle
+- **Notes**: Event list and create pages implemented. Server actions for events CRUD created with Zod validation.
 
 ---
 
