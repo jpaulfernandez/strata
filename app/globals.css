@@ -1,0 +1,117 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Primary palette */
+  --primary: #2e2536;
+  --primary-container: #453b4d;
+
+  /* Surface hierarchy */
+  --surface: #faf9fb;
+  --surface-container-low: #f4f3f5;
+  --surface-container-lowest: #ffffff;
+  --surface-container-high: #eceaec;
+  --surface-container-highest: #e4e3e4;
+  --surface-bright: #fdfbfd;
+
+  /* Secondary */
+  --secondary-container: #e8dbef;
+
+  /* Text colors */
+  --on-primary: #ffffff;
+  --on-secondary-container: #685f70;
+  --on-surface: #1a1c1d;
+  --on-surface-variant: #4a454b;
+
+  /* Outlines */
+  --outline-variant: #ccc4cc;
+  --ghost-border: rgba(204, 196, 204, 0.15);
+
+  /* Fonts */
+  --font-manrope: 'Manrope', sans-serif;
+  --font-inter: 'Inter', sans-serif;
+
+  /* Shadows */
+  --shadow-ghost: 0 12px 40px rgba(74, 69, 75, 0.06);
+
+  /* Transitions */
+  --transition-smooth: cubic-bezier(0.2, 0, 0, 1);
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  background-color: var(--surface);
+  color: var(--on-surface);
+  font-family: var(--font-manrope);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Selection styling */
+::selection {
+  background-color: var(--secondary-container);
+  color: var(--on-secondary-container);
+}
+
+/* Focus visible styling */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Ghost border utility */
+.ghost-border {
+  border: 1px solid var(--ghost-border);
+}
+
+/* Glassmorphism utility */
+.glass {
+  background-color: rgba(250, 249, 251, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Primary gradient button */
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-container) 100%);
+  color: var(--on-primary);
+  border-radius: 9999px;
+  transition: transform var(--transition-smooth) 150ms, box-shadow var(--transition-smooth) 150ms;
+}
+
+.btn-primary:hover {
+  transform: scale(1.02);
+  box-shadow: var(--shadow-ghost);
+}
+
+/* Secondary button */
+.btn-secondary {
+  background: transparent;
+  color: var(--on-surface);
+  border-radius: 9999px;
+  border: 1px solid var(--ghost-border);
+  transition: background-color var(--transition-smooth) 150ms;
+}
+
+.btn-secondary:hover {
+  background-color: var(--surface-container-low);
+}
