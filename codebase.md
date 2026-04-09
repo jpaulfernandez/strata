@@ -49,6 +49,11 @@ This file serves as the source of truth for the EventFlow codebase. It provides 
 
 /components            # Reusable UI components
   /ui                   # Generic UI primitives (Button, Card, Input, etc.)
+  /features             # Feature-specific components
+    /events             # Event-related feature components
+      event-card.tsx    # Event card display
+      event-list.tsx    # Event list with actions
+      form-builder.tsx  # Unified form builder with drag-and-drop (dnd-kit)
 
 /lib                   # Shared utilities
   /db                   # Database schema and connection
@@ -147,6 +152,14 @@ Route protection is enforced in `app/middleware.ts`:
 | `Select` | Dropdown selection |
 | `Dialog` | Modal dialog |
 | `Badge` | Status/category tag |
+
+### Feature Components (`components/features/`)
+
+| Component | Description |
+|-----------|-------------|
+| `events/event-card.tsx` | Event card with cover image, status badge |
+| `events/event-list.tsx` | Event list with actions menu |
+| `events/form-builder.tsx` | Unified form builder with drag-and-drop for global fields and custom questions |
 
 ---
 

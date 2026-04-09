@@ -59,13 +59,13 @@
   - [x] Task 4.1: Event List Page
   - [x] Task 4.2: Create Event Page
   - [x] Task 4.3: Edit Event Page
+  - [x] Task 5: Form Builder (4.4-4.6)
 - **In progress**:
-  - [ ] Task 5: Form Builder (4.4-4.6)
-- **Remaining**:
   - [ ] Task 4.7: Share Panel
+- **Remaining**:
   - [ ] Task 4.8: Duplicate Event Action
   - [ ] Task 4.9: Event Status Toggle
-- **Notes**: Event list, create, and edit pages implemented. Server actions for events CRUD created with Zod validation. Edit page includes duplicate functionality, read-only created date and registrant count.
+- **Notes**: Event list, create, and edit pages implemented. Server actions for events CRUD created with Zod validation. Form builder component created with drag-and-drop support using @dnd-kit. Supports enabling/disabling global fields, custom questions with add/edit/delete, and combined preview. Edit page includes duplicate functionality, read-only created date and registrant count.
 
 ---
 
