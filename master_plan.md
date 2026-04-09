@@ -6,6 +6,33 @@
 
 ---
 
+## Progress Tracker
+
+### 🟢 Wave 1 — Foundation (Complete)
+
+- **Status**: Complete
+- **Last updated**: 2026-04-09
+- **Completed**:
+  - [x] Task 1.1: Project Initialization
+  - [x] Task 1.2: Database Schema — Core Tables
+  - [x] Task 6.2: QR Code Generation Utility
+- **Notes**: Next.js 14 with App Router, Drizzle ORM, Tailwind with DESIGN.md tokens, all 6 database tables created
+
+### 🟡 Wave 2 — Auth Layer (Not Started)
+
+- **Status**: Not Started
+- **Blocked by**: Wave 1 complete
+- **Remaining**:
+  - [ ] Task 1.3: Database Indexes
+  - [ ] Task 1.4: better-auth Configuration
+  - [ ] Task 2.1: better-auth Configuration
+  - [ ] Task 2.2: Login Page & Auth Actions
+  - [ ] Task 2.3: Auth Middleware
+  - [ ] Task 2.4: Role-Based Access Control
+  - [ ] Task 2.5: User Role Initialization
+
+---
+
 ## Executive Summary
 
 EventFlow is an event registration and check-in platform with three user-facing surfaces:
