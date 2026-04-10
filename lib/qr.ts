@@ -89,7 +89,7 @@ export async function generateQRCodeSVG(
  *
  * @example
  * ```ts
- * const qrDataUrl = await generateQRCodeForUrl('https://eventflow.app/event/123');
+ * const qrDataUrl = await generateQRCodeForUrl('https://strata.app/event/123');
  * ```
  */
 export async function generateQRCodeForUrl(

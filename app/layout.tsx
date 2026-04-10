@@ -16,22 +16,22 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'EventFlow - Event Registration & Check-in Platform',
-    template: '%s | EventFlow',
+    default: 'Strata - Event Registration & Check-in Platform',
+    template: '%s | Strata',
   },
   description: 'Streamline your event management with powerful registration, ticketing, and check-in tools.',
   keywords: ['event management', 'registration', 'check-in', 'tickets', 'QR code'],
-  authors: [{ name: 'EventFlow Team' }],
+  authors: [{ name: 'Strata Team' }],
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    title: 'EventFlow - Event Registration & Check-in Platform',
+    title: 'Strata - Event Registration & Check-in Platform',
     description: 'Streamline your event management with powerful registration, ticketing, and check-in tools.',
-    siteName: 'EventFlow',
+    siteName: 'Strata',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'EventFlow - Event Registration & Check-in Platform',
+    title: 'Strata - Event Registration & Check-in Platform',
     description: 'Streamline your event management with powerful registration, ticketing, and check-in tools.',
   },
   robots: {

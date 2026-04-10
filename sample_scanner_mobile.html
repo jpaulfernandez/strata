@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Staff: Mobile Scanner</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#655a6e",
+                    "on-tertiary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "surface-container-high": "#e9e8ea",
+                    "background": "#faf9fb",
+                    "on-primary": "#ffffff",
+                    "on-secondary-fixed": "#1f1927",
+                    "on-tertiary-fixed": "#1e1c07",
+                    "secondary-fixed-dim": "#cec2d6",
+                    "tertiary-fixed": "#e8e4c1",
+                    "inverse-primary": "#d0c1d8",
+                    "on-background": "#1a1c1d",
+                    "tertiary": "#2c2a13",
+                    "surface-variant": "#e3e2e4",
+                    "error": "#ba1a1a",
+                    "surface-container-low": "#f4f3f5",
+                    "on-tertiary-fixed-variant": "#4a482e",
+                    "on-primary-fixed-variant": "#4d4355",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary": "#645b6c",
+                    "primary-fixed-dim": "#d0c1d8",
+                    "on-surface": "#1a1c1d",
+                    "on-secondary-fixed-variant": "#4c4453",
+                    "on-secondary": "#ffffff",
+                    "tertiary-fixed-dim": "#ccc8a6",
+                    "inverse-surface": "#2f3032",
+                    "on-surface-variant": "#4a454b",
+                    "tertiary-container": "#424027",
+                    "on-error-container": "#93000a",
+                    "surface-container": "#eeedef",
+                    "on-primary-container": "#b3a5bb",
+                    "primary-container": "#453b4d",
+                    "surface-dim": "#dadadc",
+                    "secondary-fixed": "#ebdef2",
+                    "surface": "#faf9fb",
+                    "on-primary-fixed": "#211828",
+                    "inverse-on-surface": "#f1f0f2",
+                    "primary": "#2e2536",
+                    "on-secondary-container": "#685f70",
+                    "outline": "#7b757c",
+                    "surface-container-highest": "#e3e2e4",
+                    "primary-fixed": "#edddf4",
+                    "outline-variant": "#ccc4cc",
+                    "on-tertiary-container": "#afac8c",
+                    "error-container": "#ffdad6",
+                    "surface-bright": "#faf9fb",
+                    "secondary-container": "#e8dbef"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Manrope"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .scanner-overlay {
+            background: rgba(26, 28, 29, 0.6);
+            backdrop-filter: blur(2px);
+        }
+        .scanner-cutout {
+            box-shadow: 0 0 0 1000px rgba(26, 28, 29, 0.7);
+        }
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(232, 219, 239, 0.4), transparent);
+            background-size: 200% 100%;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background font-body text-on-background antialiased overflow-hidden">
+<!-- Top Navigation Shell -->
+<header class="w-full top-0 sticky z-50 bg-[#faf9fb] dark:bg-[#1a1c1d]">
+<div class="flex justify-between items-center px-8 py-4 max-w-[1440px] mx-auto">
+<div class="flex items-center gap-2">
+<span class="text-2xl font-extrabold text-[#453b4d] dark:text-[#faf9fb] tracking-tighter font-headline">Strata Onyx</span>
+<span class="text-xs font-label uppercase tracking-widest text-on-secondary-container bg-secondary-container px-2 py-0.5 rounded-full ml-2">Staff</span>
+</div>
+<nav class="hidden md:flex gap-8 items-center">
+<a class="text-[#685f70] dark:text-[#ccc4cc] font-headline tracking-tight font-bold hover:text-[#453b4d] transition-colors" href="#">Dashboard</a>
+<a class="text-[#685f70] dark:text-[#ccc4cc] font-headline tracking-tight font-bold hover:text-[#453b4d] transition-colors" href="#">Events</a>
+<a class="text-[#453b4d] dark:text-[#faf9fb] border-b-2 border-[#453b4d] pb-1 font-headline tracking-tight font-bold" href="#">Check-in</a>
+<a class="text-[#685f70] dark:text-[#ccc4cc] font-headline tracking-tight font-bold hover:text-[#453b4d] transition-colors" href="#">Staff</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-[#453b4d] dark:text-[#e8dbef] p-2 hover:bg-surface-container-low rounded-full transition-colors" data-icon="notifications">notifications</button>
+<button class="material-symbols-outlined text-[#453b4d] dark:text-[#e8dbef] p-2 hover:bg-surface-container-low rounded-full transition-colors" data-icon="settings">settings</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container/20">
+<img alt="User profile" data-alt="close-up portrait of a professional man with a friendly expression in a modern office setting with soft natural light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuClkn-MNBUbDdGF-kYVmpDnr28QUhQXRGQyCNIxR6GNmdUSUR2nkeoPwzUJIDqLY8r37CEOaNqiAYlyZHHDM7S-lwh8MroS5Xe8jzPuWLQucqpWzZo5N2xhqnmrezo00iJuEJfGIx7-_C3ZnhLuCGx7JIGxvbGw16K-LXkERrqPjmA1ZrT60Xd7DG0dFcwjJ6oEOf7UrLeXU9arMorfh7xmje6EEaMET9Octf-wXuQwABjXcGvuWQDojU7qRVN8mr4ZzSp8m56mjmw"/>
+</div>
+</div>
+</div>
+</header>
+<main class="relative h-[calc(100vh-72px)] w-full overflow-hidden flex flex-col md:flex-row">
+<!-- Side Navigation (Web) -->
+<aside class="h-screen w-64 left-0 hidden md:flex flex-col bg-[#f4f3f5] dark:bg-[#1a1c1d] border-r border-transparent py-8 pl-4 pr-0">
+<div class="mb-8 px-4">
+<h2 class="text-xl font-bold text-[#453b4d] font-headline">Event Central</h2>
+<p class="text-xs text-[#685f70] font-label">Scanner Mode</p>
+</div>
+<div class="flex flex-col gap-4 flex-grow">
+<a class="bg-[#ffffff] dark:bg-[#2e2536] text-[#453b4d] dark:text-[#faf9fb] font-semibold rounded-r-full flex items-center gap-3 px-4 py-3 transition-transform hover:translate-x-1 cubic-bezier(0.2,0,0,1)" href="#">
+<span class="material-symbols-outlined" data-icon="qr_code_scanner">qr_code_scanner</span>
+<span>Scan QR</span>
+</a>
+<a class="text-[#685f70] dark:text-[#ccc4cc] hover:bg-[#faf9fb]/50 flex items-center gap-3 px-4 py-3 transition-transform hover:translate-x-1 cubic-bezier(0.2,0,0,1)" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span>Recent</span>
+</a>
+<a class="text-[#685f70] dark:text-[#ccc4cc] hover:bg-[#faf9fb]/50 flex items-center gap-3 px-4 py-3 transition-transform hover:translate-x-1 cubic-bezier(0.2,0,0,1)" href="#">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+<span>Statistics</span>
+</a>
+<a class="text-[#685f70] dark:text-[#ccc4cc] hover:bg-[#faf9fb]/50 flex items-center gap-3 px-4 py-3 transition-transform hover:translate-x-1 cubic-bezier(0.2,0,0,1)" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</div>
+<div class="mt-auto px-4 flex flex-col gap-4">
+<button class="w-full py-3 px-4 bg-primary-container text-white rounded-full font-headline font-bold text-sm">Manual Entry</button>
+<div class="flex items-center gap-3 px-4 py-3 text-[#685f70] dark:text-[#ccc4cc]">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+<span>Support</span>
+</div>
+</div>
+</aside>
+<!-- Scanner Canvas -->
+<section class="relative flex-grow h-full bg-[#1a1c1d]">
+<!-- Camera View Simulator -->
+<div class="absolute inset-0 z-0">
+<img alt="Camera view" class="w-full h-full object-cover opacity-60" data-alt="Wide shot of a blurred contemporary event venue with soft purple and gold ambient lighting and silhouettes of attendees" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAV8-cYZ1lFa-5gFkLgngc0OqmDMFVgxwCygzzpmzqenUFLDkEzgxX4BqubrvUXFfFtkEKmSRPObfQ0y1FIXUGyefyaOelTwe7AL-vkURE5ekvpNIk64LKSkcLM9AzUgOAwP7bHgQ3XOOAXwNW3nXjtyF5OOtn2wtwJs-ntos2N6z3z2oJdzbR0QV-MIGHzWi7247BPO8z_BY3SkuUUVr9L_95gqGL_dWqALnENSEYPkoowqgxShVaNFo3iyZugMrkMonzCqF2dRjM"/>
+</div>
+<!-- Scanner Interface -->
+<div class="absolute inset-0 z-10 flex flex-col items-center justify-center">
+<!-- Focus Window -->
+<div class="relative w-72 h-72 md:w-96 md:h-96">
+<div class="scanner-cutout absolute inset-0 rounded-[2rem] border-2 border-white/20"></div>
+<!-- Corner Accents -->
+<div class="absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 border-secondary-fixed rounded-tl-[2rem]"></div>
+<div class="absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 border-secondary-fixed rounded-tr-[2rem]"></div>
+<div class="absolute bottom-0 left-0 w-12 h-12 border-b-4 border-l-4 border-secondary-fixed rounded-bl-[2rem]"></div>
+<div class="absolute bottom-0 right-0 w-12 h-12 border-b-4 border-r-4 border-secondary-fixed rounded-br-[2rem]"></div>
+<!-- Scanning Line -->
+<div class="absolute top-1/2 left-4 right-4 h-0.5 bg-secondary-fixed/60 shadow-[0_0_15px_rgba(232,219,239,0.8)]"></div>
+</div>
+<p class="mt-8 text-white/80 font-headline font-medium tracking-wide">Align QR Code within the frame</p>
+</div>
+<!-- Mobile Quick Actions -->
+<div class="absolute bottom-24 left-0 right-0 z-20 flex justify-center gap-6 px-6 md:hidden">
+<button class="w-14 h-14 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="flashlight_on">flashlight_on</span>
+</button>
+<button class="flex-grow max-w-xs h-14 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white gap-2 font-headline font-bold active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="keyboard">keyboard</span>
+<span>Manual Entry</span>
+</button>
+</div>
+<!-- Success Modal (The Slide-up) -->
+<div class="absolute inset-x-0 bottom-0 z-40 transform translate-y-0 transition-transform duration-500 ease-out md:max-w-md md:mx-auto md:mb-8 md:rounded-[2rem] overflow-hidden">
+<div class="bg-surface-container-lowest shadow-[0_-12px_40px_rgba(74,69,75,0.1)] rounded-t-[2.5rem] md:rounded-[2.5rem] p-8">
+<!-- Handle for mobile -->
+<div class="w-12 h-1.5 bg-outline-variant/30 rounded-full mx-auto mb-8 md:hidden"></div>
+<div class="flex items-start justify-between mb-6">
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 rounded-2xl overflow-hidden shadow-lg border-2 border-secondary-container">
+<img alt="Attendee photo" data-alt="headshot of a stylish young woman with a vibrant smile against a soft pastel background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBwUTNLLUye5JbVhEDQ5wCCXbBE-jM7X7ZzcseFpmvaDqwCQSv-Owmx3uZurTDN3WpcySwr1DDvjW-a11SpkxWMOwfjifAdieZ0ifZMP9Inpynl5vC_Pa0Tl1gZ3oB-SxEDwAO-XHkv_pu9FGVu6nxwRmICsUSmWy2KJ4RMxXgq7aYHtXjwDHCbAPHHvj2zWCyZQKpKKljIemJTOapne4BRz7mFyuPleMHaqqZb3iqmQkupnXvGcRvzqnGrZBOYeD1FP4flBaijSp8"/>
+</div>
+<div>
+<h3 class="text-2xl font-headline font-extrabold text-on-surface tracking-tight">Elena Moretti</h3>
+<div class="flex items-center gap-2 mt-1">
+<span class="flex items-center gap-1 bg-[#453b4d] text-white text-[10px] font-label font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter">
+<span class="material-symbols-outlined text-[12px]" data-icon="grade" data-weight="fill" style="font-variation-settings: 'FILL' 1;">grade</span>
+                                        VIP Member
+                                    </span>
+<span class="text-on-secondary-container font-label text-[11px] font-medium uppercase tracking-wider">Ticket #8842-X</span>
+</div>
+</div>
+</div>
+<div class="bg-secondary-container/30 p-3 rounded-2xl">
+<span class="material-symbols-outlined text-primary-container text-3xl" data-icon="check_circle" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-8">
+<div class="bg-surface-container-low p-4 rounded-2xl">
+<p class="text-[10px] font-label font-bold text-on-secondary-container uppercase tracking-widest mb-1">Status</p>
+<p class="text-primary-container font-headline font-bold">Ready to Check-in</p>
+</div>
+<div class="bg-surface-container-low p-4 rounded-2xl">
+<p class="text-[10px] font-label font-bold text-on-secondary-container uppercase tracking-widest mb-1">Session</p>
+<p class="text-primary-container font-headline font-bold">Main Plenary</p>
+</div>
+</div>
+<div class="flex gap-4">
+<button class="flex-1 py-4 px-6 rounded-full border border-outline-variant text-on-surface-variant font-headline font-bold hover:bg-surface-container-high transition-colors">Discard</button>
+<button class="flex-[2] py-4 px-6 rounded-full bg-gradient-to-br from-primary to-primary-container text-white font-headline font-bold shadow-lg shadow-primary-container/20 hover:scale-102 transition-transform active:scale-95">Confirm Check-in</button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom NavBar Shell (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-2 bg-[#faf9fb]/80 dark:bg-[#1a1c1d]/80 backdrop-blur-xl z-50 rounded-t-[1.5rem] shadow-[0_-12px_40px_rgba(74,69,75,0.06)]">
+<a class="flex flex-col items-center justify-center bg-[#453b4d] text-white rounded-2xl px-5 py-2 scale-110 transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="qr_code_scanner">qr_code_scanner</span>
+<span class="font-inter text-[11px] font-medium uppercase tracking-wider mt-1">Scanner</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#685f70] dark:text-[#ccc4cc] py-2 active:scale-95 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-inter text-[11px] font-medium uppercase tracking-wider mt-1">History</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#685f70] dark:text-[#ccc4cc] py-2 active:scale-95 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-inter text-[11px] font-medium uppercase tracking-wider mt-1">Stats</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#685f70] dark:text-[#ccc4cc] py-2 active:scale-95 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="keyboard">keyboard</span>
+<span class="font-inter text-[11px] font-medium uppercase tracking-wider mt-1">Manual</span>
+</a>
+</nav>
+</body></html>

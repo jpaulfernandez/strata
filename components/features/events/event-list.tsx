@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import {
   Search,
@@ -15,6 +16,11 @@ import {
   Trash2,
   Calendar,
   MapPin,
+  MoreVertical,
+  Check,
+  LayoutDashboard,
+  ScanLine,
+  Eye,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -27,6 +33,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { EventCard } from "./event-card"
 import { deleteEvent, duplicateEvent, toggleEventStatus } from "@/server/actions/events"
 import type { Event } from "@/lib/db/schema"
@@ -41,26 +48,47 @@ interface EventListProps {
 type ViewMode = "grid" | "list"
 type StatusFilter = "all" | "draft" | "open" | "closed"
 
-const statusColors: Record<string, "success" | "warning" | "secondary" | "error"> = {
+const statusColors: Record<string, "primary" | "warning" | "secondary" | "error"> = {
   draft: "secondary",
-  open: "success",
-  closed: "error",
+  open: "primary",
+  closed: "warning",
+  ended: "error",
 }
 
 const statusLabels: Record<string, string> = {
   draft: "Draft",
   open: "Open",
   closed: "Closed",
+  ended: "Ended",
 }
 
+const VIEW_MODE_KEY = "strata-events-view-mode"
+
 export function EventList({ initialEvents }: EventListProps) {
-  const [viewMode, setViewMode] = React.useState<ViewMode>("grid")
+  const [viewMode, setViewMode] = React.useState<ViewMode>(() => {
+    // Initialize from localStorage if available
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(VIEW_MODE_KEY)
+      if (saved === "grid" || saved === "list") {
+        return saved
+      }
+    }
+    return "grid"
+  })
   const [searchQuery, setSearchQuery] = React.useState("")
   const [statusFilter, setStatusFilter] = React.useState<StatusFilter>("all")
   const [events, setEvents] = React.useState<Event[]>(initialEvents)
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
   const [eventToDelete, setEventToDelete] = React.useState<Event | null>(null)
   const [isDeleting, setIsDeleting] = React.useState(false)
+
+  // Save view mode to localStorage
+  const handleViewModeChange = React.useCallback((mode: ViewMode) => {
+    setViewMode(mode)
+    if (typeof window !== "undefined") {
+      localStorage.setItem(VIEW_MODE_KEY, mode)
+    }
+  }, [])
 
   // Filter events based on search and status
   const filteredEvents = React.useMemo(() => {
@@ -177,7 +205,7 @@ export function EventList({ initialEvents }: EventListProps) {
           <Button
             variant={viewMode === "grid" ? "primary" : "ghost"}
             size="sm"
-            onClick={() => setViewMode("grid")}
+            onClick={() => handleViewModeChange("grid")}
             className="gap-1.5"
           >
             <LayoutGrid className="h-4 w-4" />
@@ -186,7 +214,7 @@ export function EventList({ initialEvents }: EventListProps) {
           <Button
             variant={viewMode === "list" ? "primary" : "ghost"}
             size="sm"
-            onClick={() => setViewMode("list")}
+            onClick={() => handleViewModeChange("list")}
             className="gap-1.5"
           >
             <List className="h-4 w-4" />
@@ -319,8 +347,10 @@ function EventListRow({
   onDuplicate,
   onToggleStatus,
 }: EventListRowProps) {
+  const router = useRouter()
   const [isDuplicating, setIsDuplicating] = React.useState(false)
   const [isTogglingStatus, setIsTogglingStatus] = React.useState(false)
+  const [shareCopied, setShareCopied] = React.useState(false)
 
   const handleDuplicate = async () => {
     setIsDuplicating(true)
@@ -340,14 +370,26 @@ function EventListRow({
     }
   }
 
+  const handleShare = () => {
+    const url = `${window.location.origin}/e/${event.slug}`
+    navigator.clipboard.writeText(url)
+    setShareCopied(true)
+    setTimeout(() => setShareCopied(false), 2000)
+  }
+
   const formattedDate = event.eventDate
     ? format(new Date(event.eventDate), "MMM d, yyyy")
     : "No date set"
 
+  // Draft events go to edit, published/open/closed events go to dashboard
+  const titleHref = event.status === "draft"
+    ? `/admin/events/${event.id}/edit`
+    : `/admin/dashboard/${event.id}`
+
   return (
-    <tr className="border-b border-[var(--ghost-border)] last:border-b-0 hover:bg-[var(--surface-container-low)] transition-colors">
+    <tr className="border-b border-[var(--ghost-border)] last:border-b-0 hover:bg-[var(--secondary-container)]/30 transition-colors">
       <td className="px-6 py-4">
-        <div className="flex items-center gap-3">
+        <Link href={titleHref} className="flex items-center gap-3 group">
           {/* Mini cover image */}
           <div className="h-10 w-10 rounded-lg overflow-hidden shrink-0">
             {event.coverImageUrl ? (
@@ -368,14 +410,14 @@ function EventListRow({
             )}
           </div>
           <div className="min-w-0">
-            <p className="font-medium text-[var(--on-surface)] truncate">
+            <p className="font-medium text-[var(--on-surface)] truncate group-hover:text-[var(--primary)] transition-colors">
               {event.title}
             </p>
             <p className="text-sm text-[var(--on-surface-variant)] truncate">
               /{event.slug}
             </p>
           </div>
-        </div>
+        </Link>
       </td>
       <td className="px-6 py-4">
         <div className="flex items-center gap-2 text-sm text-[var(--on-surface-variant)]">
@@ -402,45 +444,74 @@ function EventListRow({
       </td>
       <td className="px-6 py-4">
         <div className="flex items-center gap-1">
-          <Link href={`/admin/events/${event.id}`}>
-            <Button variant="ghost" size="sm">
-              <Edit3 className="h-4 w-4" />
+          <Link href={`/admin/dashboard/${event.id}`}>
+            <Button variant="ghost" size="sm" title="Dashboard">
+              <LayoutDashboard className="h-4 w-4" />
             </Button>
           </Link>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleDuplicate}
-            disabled={isDuplicating}
+          <Link href={`/admin/scan/${event.id}`}>
+            <Button variant="ghost" size="sm" title="Scanner">
+              <ScanLine className="h-4 w-4" />
+            </Button>
+          </Link>
+          {/* Preview Link (for draft) or Share Link (for open/closed/ended) */}
+          {event.status === "draft" ? (
+            <Link href={`/e/${event.slug}?preview=true`} target="_blank">
+              <Button variant="ghost" size="sm" title="Preview">
+                <Eye className="h-4 w-4" />
+              </Button>
+            </Link>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleShare}
+              title="Share"
+            >
+              {shareCopied ? (
+                <Check className="h-4 w-4 text-green-600" />
+              ) : (
+                <Share2 className="h-4 w-4" />
+              )}
+            </Button>
+          )}
+          {/* More Actions Dropdown */}
+          <DropdownMenu
+            trigger={
+              <Button variant="ghost" size="sm" className="px-2">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            }
           >
-            <Copy className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleToggleStatus}
-            disabled={isTogglingStatus}
-          >
-            <ToggleLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              const url = `${window.location.origin}/events/${event.slug}`
-              navigator.clipboard.writeText(url)
-            }}
-          >
-            <Share2 className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-            onClick={onDelete}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+            <DropdownMenuItem onClick={() => router.push(`/admin/events/${event.id}/edit`)}>
+                <span className="flex items-center gap-2">
+                  <Edit3 className="h-4 w-4" />
+                  Edit
+                </span>
+              </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleDuplicate} disabled={isDuplicating}>
+              <span className="flex items-center gap-2">
+                <Copy className="h-4 w-4" />
+                {isDuplicating ? "Duplicating..." : "Duplicate"}
+              </span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleToggleStatus} disabled={isTogglingStatus}>
+              <span className="flex items-center gap-2">
+                <ToggleLeft className="h-4 w-4" />
+                {isTogglingStatus ? "Updating..." : "Toggle Status"}
+              </span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={onDelete}
+              className="text-red-600 hover:text-red-700"
+            >
+              <span className="flex items-center gap-2">
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </span>
+            </DropdownMenuItem>
+          </DropdownMenu>
         </div>
       </td>
     </tr>

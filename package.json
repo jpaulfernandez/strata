@@ -1,5 +1,5 @@
 {
-  "name": "eventflow",
+  "name": "strata",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -11,7 +11,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "npx tsx server/db/seed.ts"
+    "db:seed": "npx tsx server/db/seed.ts",
+    "db:reset": "npx tsx migrations/run-migration.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -19,6 +20,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^3.9.1",
+    "@node-rs/argon2": "^2.0.2",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.2.4",

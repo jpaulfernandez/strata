@@ -20,7 +20,7 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
-import { GripVertical, Plus, Trash2, Eye, EyeOff, Check } from "lucide-react"
+import { GripVertical, Plus, Trash2, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -75,17 +75,6 @@ interface CustomQuestion {
   order: number
 }
 
-// Unified form item for combined preview
-interface UnifiedFormItem {
-  id: string
-  type: "global" | "custom"
-  label: string
-  fieldType: FieldType
-  options?: FieldOption[]
-  isRequired: boolean
-  originalId: string
-}
-
 interface FormBuilderProps {
   globalFields: GlobalField[]
   initialFormFields?: FormField[]
@@ -108,6 +97,13 @@ const fieldTypeBadgeColors: Record<FieldType, string> = {
   multiple_choice: "bg-orange-100 text-orange-800",
   checkboxes: "bg-pink-100 text-pink-800",
 }
+
+// Built-in fields that are always present (First Name, Last Name, Email)
+const BUILT_IN_FIELDS = [
+  { id: "__firstName__", label: "First Name", fieldType: "short_text" as const, isRequired: true, isBuiltIn: true },
+  { id: "__lastName__", label: "Last Name", fieldType: "short_text" as const, isRequired: true, isBuiltIn: true },
+  { id: "__email__", label: "Email Address", fieldType: "short_text" as const, isRequired: true, isBuiltIn: true },
+]
 
 // Sortable Item Component
 interface SortableItemProps {
@@ -147,6 +143,36 @@ function SortableItem({ id, children, className }: SortableItemProps) {
       {...listeners}
     >
       {children}
+    </div>
+  )
+}
+
+// Built-in Field Item (required but reorderable)
+function BuiltInFieldItem({ field }: { field: typeof BUILT_IN_FIELDS[0] }) {
+  return (
+    <div className="flex items-center gap-3 flex-1">
+      <div className="cursor-grab active:cursor-grabbing p-1.5 rounded-lg hover:bg-[var(--surface-container-low)] text-[var(--on-surface-variant)]">
+        <GripVertical className="h-4 w-4" />
+      </div>
+      <div className="flex items-center gap-2 flex-1">
+        <div className="flex items-center justify-center w-5 h-5 rounded-md bg-[var(--primary-container)] text-[var(--on-primary-container)]">
+          <Check className="h-3 w-3" />
+        </div>
+        <div className="flex flex-col">
+          <span className="text-sm font-medium text-[var(--on-surface)]">
+            {field.label}
+          </span>
+        </div>
+      </div>
+      <Badge
+        variant="default"
+        className={cn("text-xs", fieldTypeBadgeColors[field.fieldType])}
+      >
+        {fieldTypeLabels[field.fieldType]}
+      </Badge>
+      <Badge variant="secondary" className="text-xs">
+        Required
+      </Badge>
     </div>
   )
 }
@@ -252,46 +278,6 @@ function CustomQuestionItem({ question, onEdit, onDelete }: CustomQuestionItemPr
       >
         <Trash2 className="h-4 w-4" />
       </Button>
-    </div>
-  )
-}
-
-// Preview Item
-interface PreviewItemProps {
-  item: UnifiedFormItem
-  index: number
-}
-
-function PreviewItem({ item, index }: PreviewItemProps) {
-  return (
-    <div className="flex items-start gap-3 p-3 rounded-xl bg-[var(--surface-container-low)]">
-      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[var(--primary-container)] text-[var(--on-primary)] text-xs font-medium">
-        {index + 1}
-      </span>
-      <div className="flex flex-col flex-1 gap-1">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-[var(--on-surface)]">
-            {item.label}
-          </span>
-          {item.isRequired && (
-            <span className="text-red-500 text-xs">*</span>
-          )}
-          <Badge
-            variant="outline"
-            className="text-xs"
-          >
-            {item.type === "global" ? "Global" : "Custom"}
-          </Badge>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge
-            variant="default"
-            className={cn("text-xs", fieldTypeBadgeColors[item.fieldType])}
-          >
-            {fieldTypeLabels[item.fieldType]}
-          </Badge>
-        </div>
-      </div>
     </div>
   )
 }
@@ -454,12 +440,26 @@ export function FormBuilder({
   initialCustomQuestions = [],
   onChange,
 }: FormBuilderProps) {
-  const [enabledGlobalIds, setEnabledGlobalIds] = React.useState<Set<string>>(
-    () => new Set(initialFormFields.map(f => f.id))
-  )
-  const [orderedGlobalIds, setOrderedGlobalIds] = React.useState<string[]>(
-    () => [...initialFormFields].sort((a, b) => a.order - b.order).map(f => f.id)
-  )
+  // Track if this is the initial mount
+  const isInitialMount = React.useRef(true)
+
+  // All field IDs in order (built-in + enabled global fields)
+  const [allFieldIds, setAllFieldIds] = React.useState<string[]>(() => {
+    // Initialize with built-in fields first
+    const builtInIds = BUILT_IN_FIELDS.map(f => f.id)
+    // Then add existing global field IDs that were enabled
+    const globalIds = initialFormFields
+      .filter(f => !f.id.startsWith("__"))
+      .sort((a, b) => a.order - b.order)
+      .map(f => f.id)
+    return [...builtInIds, ...globalIds]
+  })
+
+  // Track which global fields are enabled
+  const [enabledGlobalIds, setEnabledGlobalIds] = React.useState<Set<string>>(() => {
+    return new Set(initialFormFields.filter(f => !f.id.startsWith("__")).map(f => f.id))
+  })
+
   const [customQuestions, setCustomQuestions] = React.useState<CustomQuestion[]>(
     () => [...initialCustomQuestions].sort((a, b) => a.order - b.order)
   )
@@ -476,46 +476,15 @@ export function FormBuilder({
     })
   )
 
-  // Build unified preview
-  const buildUnifiedPreview = React.useCallback((): UnifiedFormItem[] => {
-    const items: UnifiedFormItem[] = []
-
-    // Add enabled global fields in order
-    orderedGlobalIds.forEach(id => {
-      const field = globalFields.find(f => f.id === id)
-      if (field && enabledGlobalIds.has(id)) {
-        items.push({
-          id: `global-${id}`,
-          type: "global",
-          label: field.label,
-          fieldType: field.fieldType,
-          options: field.options || undefined,
-          isRequired: field.isRequired,
-          originalId: id,
-        })
-      }
-    })
-
-    // Add custom questions
-    customQuestions.forEach(q => {
-      items.push({
-        id: `custom-${q.id}`,
-        type: "custom",
-        label: q.question,
-        fieldType: q.fieldType,
-        options: q.options,
-        isRequired: q.isRequired,
-        originalId: q.id,
-      })
-    })
-
-    return items
-  }, [orderedGlobalIds, enabledGlobalIds, customQuestions, globalFields])
-
-  // Notify parent of changes
+  // Notify parent of changes (skip initial mount)
   React.useEffect(() => {
-    const formFields: FormField[] = orderedGlobalIds
-      .filter(id => enabledGlobalIds.has(id))
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
+
+    const formFields: FormField[] = allFieldIds
+      .filter(id => !id.startsWith("__") && enabledGlobalIds.has(id))
       .map((id, index) => {
         const field = globalFields.find(f => f.id === id)
         return {
@@ -534,30 +503,43 @@ export function FormBuilder({
     }))
 
     onChange(formFields, orderedCustomQuestions)
-  }, [enabledGlobalIds, orderedGlobalIds, customQuestions, globalFields, onChange])
+  }, [allFieldIds, enabledGlobalIds, customQuestions, globalFields, onChange])
+
+  // Get all fields for display (built-in + enabled global)
+  const allFieldsForDisplay = allFieldIds.map(id => {
+    if (id.startsWith("__")) {
+      return BUILT_IN_FIELDS.find(f => f.id === id)
+    }
+    return globalFields.find(f => f.id === id && enabledGlobalIds.has(id))
+  }).filter(Boolean)
 
   const handleToggleGlobalField = (fieldId: string) => {
     setEnabledGlobalIds(prev => {
       const next = new Set(prev)
       if (next.has(fieldId)) {
         next.delete(fieldId)
+        // Remove from allFieldIds
+        setAllFieldIds(ids => ids.filter(id => id !== fieldId))
       } else {
         next.add(fieldId)
-        // Add to ordered list if not present
-        if (!orderedGlobalIds.includes(fieldId)) {
-          setOrderedGlobalIds(o => [...o, fieldId])
-        }
+        // Add to allFieldIds at the end
+        setAllFieldIds(ids => {
+          if (!ids.includes(fieldId)) {
+            return [...ids, fieldId]
+          }
+          return ids
+        })
       }
       return next
     })
   }
 
-  const handleGlobalDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (!over) return
 
     if (active.id !== over.id) {
-      setOrderedGlobalIds(items => {
+      setAllFieldIds(items => {
         const oldIndex = items.indexOf(active.id as string)
         const newIndex = items.indexOf(over.id as string)
         return arrayMove(items, oldIndex, newIndex)
@@ -603,110 +585,112 @@ export function FormBuilder({
     setCustomQuestions(prev => prev.filter(q => q.id !== id))
   }
 
-  const unifiedPreview = buildUnifiedPreview()
-
-  // Filter enabled global fields for the list
-  const enabledGlobalFields = orderedGlobalIds
-    .map(id => globalFields.find(f => f.id === id))
-    .filter((f): f is GlobalField => f !== undefined && enabledGlobalIds.has(f.id))
-
-  // Filter disabled global fields
+  // Disabled global fields (not yet enabled)
   const disabledGlobalFields = globalFields.filter(f => !enabledGlobalIds.has(f.id))
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Left Panel: Global Fields */}
+    <div className="space-y-8">
+      {/* All Fields Section (Built-in + Global) */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-[var(--on-surface)]">
-            Global Fields
+            Registration Fields
           </h3>
           <span className="text-sm text-[var(--on-surface-variant)]">
-            {enabledGlobalIds.size} enabled
+            {allFieldsForDisplay.length} fields
           </span>
         </div>
 
         <div className="space-y-2">
           <p className="text-sm text-[var(--on-surface-variant)]">
-            Drag to reorder enabled fields. Check to enable for this event.
+            Drag to reorder all fields. Built-in fields (First Name, Last Name, Email) are always required and cannot be disabled.
           </p>
 
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
-            onDragEnd={handleGlobalDragEnd}
+            onDragEnd={handleDragEnd}
             onDragStart={(e) => setActiveDragId(e.active.id as string)}
             modifiers={[restrictToVerticalAxis]}
           >
-            <div className="space-y-2">
-              {/* Enabled fields - sortable */}
-              {enabledGlobalFields.length > 0 && (
-                <SortableContext
-                  items={enabledGlobalFields.map(f => f.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="space-y-2">
-                    {enabledGlobalFields.map(field => (
-                      <SortableItem key={field.id} id={field.id}>
-                        <GlobalFieldItem
-                          field={field}
-                          isEnabled={true}
-                          onToggle={() => handleToggleGlobalField(field.id)}
-                        />
-                      </SortableItem>
-                    ))}
-                  </div>
-                </SortableContext>
-              )}
+            <SortableContext
+              items={allFieldIds}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-2">
+                {allFieldsForDisplay.map((field) => {
+                  if (!field) return null
 
-              {/* Disabled fields - not sortable, listed at bottom */}
-              {disabledGlobalFields.length > 0 && (
-                <div className="space-y-2 pt-4 border-t border-[var(--surface-container-high)]">
-                  <p className="text-xs font-medium text-[var(--on-surface-variant)] uppercase tracking-wider">
-                    Available Fields
-                  </p>
-                  {disabledGlobalFields.map(field => (
-                    <div
-                      key={field.id}
-                      className="flex items-center gap-3 p-3 rounded-xl bg-[var(--surface-container-low)]/50 opacity-70"
-                    >
-                      <div className="p-1.5 text-[var(--on-surface-variant)]/30">
-                        <GripVertical className="h-4 w-4" />
-                      </div>
-                      <div className="flex items-center gap-2 flex-1">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleGlobalField(field.id)}
-                          className="flex items-center justify-center w-5 h-5 rounded-md border-2 border-[var(--ghost-border)] hover:border-[var(--primary)]/50 transition-all duration-150"
-                        >
-                          <EyeOff className="h-3 w-3 opacity-0" />
-                        </button>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-[var(--on-surface)]">
-                            {field.label}
-                          </span>
-                        </div>
-                      </div>
-                      <Badge
-                        variant="default"
-                        className={cn("text-xs", fieldTypeBadgeColors[field.fieldType])}
-                      >
-                        {fieldTypeLabels[field.fieldType]}
-                      </Badge>
+                  // Built-in field
+                  if ("isBuiltIn" in field && field.isBuiltIn) {
+                    return (
+                      <SortableItem key={field.id} id={field.id}>
+                        <BuiltInFieldItem field={field} />
+                      </SortableItem>
+                    )
+                  }
+
+                  // Global field
+                  return (
+                    <SortableItem key={field.id} id={field.id}>
+                      <GlobalFieldItem
+                        field={field as GlobalField}
+                        isEnabled={true}
+                        onToggle={() => handleToggleGlobalField(field.id)}
+                      />
+                    </SortableItem>
+                  )
+                })}
+              </div>
+            </SortableContext>
+
+            {/* Available global fields (disabled) */}
+            {disabledGlobalFields.length > 0 && (
+              <div className="space-y-2 pt-4 border-t border-[var(--surface-container-high)]">
+                <p className="text-xs font-medium text-[var(--on-surface-variant)] uppercase tracking-wider">
+                  Available Global Fields
+                </p>
+                {disabledGlobalFields.map(field => (
+                  <div
+                    key={field.id}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-[var(--surface-container-low)]/50 opacity-70"
+                  >
+                    <div className="p-1.5 text-[var(--on-surface-variant)]/30">
+                      <GripVertical className="h-4 w-4" />
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    <div className="flex items-center gap-2 flex-1">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleGlobalField(field.id)}
+                        className="flex items-center justify-center w-5 h-5 rounded-md border-2 border-[var(--ghost-border)] hover:border-[var(--primary)]/50 transition-all duration-150"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-[var(--on-surface)]">
+                          {field.label}
+                        </span>
+                      </div>
+                    </div>
+                    <Badge
+                      variant="default"
+                      className={cn("text-xs", fieldTypeBadgeColors[field.fieldType])}
+                    >
+                      {fieldTypeLabels[field.fieldType]}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <DragOverlay>
-              {activeDragId && globalFields.find(f => f.id === activeDragId) && (
+              {activeDragId && (
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--surface-container-lowest)] shadow-lg border border-[var(--primary)]/20 opacity-90">
                   <div className="p-1.5 text-[var(--on-surface-variant)]">
                     <GripVertical className="h-4 w-4" />
                   </div>
                   <span className="text-sm font-medium text-[var(--on-surface)]">
-                    {globalFields.find(f => f.id === activeDragId)?.label}
+                    {BUILT_IN_FIELDS.find(f => f.id === activeDragId)?.label ||
+                     globalFields.find(f => f.id === activeDragId)?.label ||
+                     customQuestions.find(q => q.id === activeDragId)?.question}
                   </span>
                 </div>
               )}
@@ -715,7 +699,7 @@ export function FormBuilder({
         </div>
       </div>
 
-      {/* Right Panel: Custom Questions */}
+      {/* Custom Questions Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-[var(--on-surface)]">
@@ -785,33 +769,6 @@ export function FormBuilder({
             )}
           </DragOverlay>
         </DndContext>
-      </div>
-
-      {/* Combined Preview */}
-      <div className="lg:col-span-2 space-y-4 pt-4 border-t border-[var(--surface-container-high)]">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-[var(--on-surface)]">
-            Form Preview
-          </h3>
-          <span className="text-sm text-[var(--on-surface-variant)]">
-            {unifiedPreview.length} fields total
-          </span>
-        </div>
-
-        {unifiedPreview.length === 0 ? (
-          <div className="p-8 text-center rounded-xl bg-[var(--surface-container-low)] border border-dashed border-[var(--ghost-border)]">
-            <Eye className="h-8 w-8 mx-auto text-[var(--on-surface-variant)]/50 mb-2" />
-            <p className="text-sm text-[var(--on-surface-variant)]">
-              No fields enabled. Enable global fields or add custom questions.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {unifiedPreview.map((item, index) => (
-              <PreviewItem key={item.id} item={item} index={index} />
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Add/Edit Question Dialog */}

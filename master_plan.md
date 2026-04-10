@@ -1,7 +1,7 @@
 # EventFlow — Master Implementation Plan
 
 **Version:** 1.0  
-**Last Updated:** 2026-04-09  
+**Last Updated:** 2026-04-10  
 **Spec Reference:** `../eventflow-spec.md`
 
 ---
@@ -34,7 +34,7 @@
 
 ---
 
-### 🔵 Wave 3 — Settings (Complete)
+### 🟢 Wave 3 — Settings (Complete)
 
 - **Status**: Complete
 - **Last updated**: 2026-04-09
@@ -51,21 +51,87 @@
 
 ---
 
-### 🟡 Wave 4 — Event CRUD (In Progress)
+### 🟢 Wave 4 — Event CRUD (Complete)
 
-- **Status**: In Progress
-- **Last updated**: 2026-04-09
+- **Status**: Complete
+- **Last updated**: 2026-04-10
 - **Completed**:
   - [x] Task 4.1: Event List Page
   - [x] Task 4.2: Create Event Page
-  - [x] Task 4.3: Edit Event Page
-  - [x] Task 5: Form Builder (4.4-4.6)
+  - [x] Task 4.3: Edit Event Page (Tabbed layout with form preview)
+  - [x] Task 4.4: Global Fields Toggle
+  - [x] Task 4.5: Custom Questions Builder
+  - [x] Task 4.6: Combined Ordering
   - [x] Task 4.7: Share Panel
-- **In progress**:
-  - [ ] Task 4.8: Duplicate Event Action
-- **Remaining**:
-  - [ ] Task 4.9: Event Status Toggle
-- **Notes**: Event list, create, edit pages implemented. Share panel created with copy-to-clipboard functionality, event title/status display, and back navigation. Server actions for events CRUD created with Zod validation. Form builder component created with drag-and-drop support using @dnd-kit. Supports enabling/disabling global fields, custom questions with add/edit/delete, and combined preview. Edit page includes duplicate functionality, read-only created date and registrant count.
+  - [x] Task 4.8: Duplicate Event Action
+  - [x] Task 4.9: Event Status Toggle
+- **Notes**: 
+  - Full event CRUD implemented with grid/list toggle (persisted to localStorage), search, and status filtering
+  - Edit page uses tabbed layout: "Event Details" tab and "Registration Form" tab with split view (FormBuilder left, FormPreview right)
+  - Event date/time fields: date picker + start/end time inputs (default 10:00-17:00) + optional maps link
+  - Removed `eventEndDate` field from schema
+  - Unified form builder with @dnd-kit drag-and-drop for global fields toggle and custom questions (single column layout)
+  - Event cards: clickable title (draft→edit, published→public), ellipsis menu for actions (duplicate, toggle status, delete), share button with "Copied" feedback
+  - Unsaved changes detection with fixed save bar at bottom and success toast notification
+  - Dropdown menu uses React portal to prevent clipping issues
+  - Purple color scheme applied throughout admin UI (badges, navigation, hover states)
+  - Floating sidebar with glassmorphism effect
+
+---
+
+### 🟢 Wave 5 — Public Registration + Email (Complete)
+
+- **Status**: Complete
+- **Last updated**: 2026-04-10
+- **Completed**:
+  - [x] Task 5.1: Public Event Page Layout (`/e/[slug]`)
+  - [x] Task 5.2: Dynamic Form Renderer
+  - [x] Task 5.3: Registration Submit Action
+  - [x] Task 5.4: Duplicate Email Detection
+  - [x] Task 6.1: Resend Client & Template
+  - [x] Task 6.3: Send Confirmation Email
+  - [x] Task 5.5: Thank-You Page (`/e/[slug]/thanks`)
+  - [x] Task 5.6: Ticket Page (`/ticket/[qrToken]`)
+- **Notes**: 
+  - Public registration pages with dynamic form rendering
+  - Email confirmation with embedded QR code via Resend
+  - Duplicate email detection with friendly UX
+  - Mobile-optimized ticket page
+
+---
+
+### 🟢 Wave 6 — Check-in System (Complete)
+
+- **Status**: Complete
+- **Last updated**: 2026-04-10
+- **Completed**:
+  - [x] Task 7.1: Check-in API Endpoint
+  - [x] Task 7.2: Scanner Page UI
+  - [x] Task 7.3: Scan Result Overlays
+  - [x] Task 7.4: Manual Check-in Modal
+  - [x] Task 7.5: VIP Notify Action
+- **Notes**: 
+  - QR scanner with html5-qrcode
+  - Full-screen success/already-checked-in/not-found overlays
+  - Manual check-in by email with modal
+  - VIP toggle from scanner overlay
+
+---
+
+### 🟢 Wave 7 — Live Dashboard (Complete)
+
+- **Status**: Complete
+- **Last updated**: 2026-04-10
+- **Completed**:
+  - [x] Task 8.1: Live Dashboard Page (`/admin/dashboard/[id]`)
+  - [x] Task 8.2: Realtime Updates (polling every 5s)
+  - [x] Task 8.3: VIP Notification Badge
+  - [x] Task 8.4: Registrant List Page (`/admin/events/[id]/registrants`)
+  - [x] Task 8.5: CSV Export
+- **Notes**: 
+  - Dashboard shows live check-in stats with auto-refresh
+  - Registrant list with search and status filtering
+  - CSV export with dynamic form field columns
 
 ---
 

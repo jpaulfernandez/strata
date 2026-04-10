@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-dim": "#dadadc",
+                      "surface-container": "#eeedef",
+                      "on-tertiary-fixed": "#1e1c07",
+                      "on-primary": "#ffffff",
+                      "primary-container": "#453b4d",
+                      "on-secondary-container": "#685f70",
+                      "on-primary-container": "#b3a5bb",
+                      "tertiary-container": "#424027",
+                      "on-background": "#1a1c1d",
+                      "secondary": "#645b6c",
+                      "on-secondary-fixed-variant": "#4c4453",
+                      "on-secondary": "#ffffff",
+                      "background": "#faf9fb",
+                      "surface": "#faf9fb",
+                      "on-surface-variant": "#4a454b",
+                      "on-surface": "#1a1c1d",
+                      "secondary-fixed-dim": "#cec2d6",
+                      "inverse-primary": "#d0c1d8",
+                      "tertiary-fixed-dim": "#ccc8a6",
+                      "on-tertiary-fixed-variant": "#4a482e",
+                      "outline-variant": "#ccc4cc",
+                      "surface-tint": "#655a6e",
+                      "error": "#ba1a1a",
+                      "tertiary": "#2c2a13",
+                      "primary-fixed-dim": "#d0c1d8",
+                      "on-tertiary-container": "#afac8c",
+                      "surface-bright": "#faf9fb",
+                      "secondary-container": "#e8dbef",
+                      "on-error-container": "#93000a",
+                      "surface-variant": "#e3e2e4",
+                      "primary-fixed": "#edddf4",
+                      "inverse-on-surface": "#f1f0f2",
+                      "on-primary-fixed": "#211828",
+                      "surface-container-low": "#f4f3f5",
+                      "on-primary-fixed-variant": "#4d4355",
+                      "tertiary-fixed": "#e8e4c1",
+                      "on-tertiary": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-container-highest": "#e3e2e4",
+                      "on-secondary-fixed": "#1f1927",
+                      "secondary-fixed": "#ebdef2",
+                      "surface-container-high": "#e9e8ea",
+                      "on-error": "#ffffff",
+                      "error-container": "#ffdad6",
+                      "outline": "#7b757c",
+                      "inverse-surface": "#2f3032",
+                      "primary": "#2e2536"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "fontFamily": {
+                      "headline": ["Manrope"],
+                      "body": ["Manrope"],
+                      "label": ["Inter"]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-header {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .editorial-shadow {
+            box-shadow: 0 12px 40px rgba(74, 69, 75, 0.06);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface selection:bg-secondary-container selection:text-on-secondary-container">
+<!-- Top Navigation (Shared Component Integration) -->
+<header class="fixed top-0 w-full z-50 glass-header bg-surface/80 dark:bg-slate-900/80">
+<nav class="flex justify-between items-center w-full px-8 py-4 max-w-[1920px] mx-auto">
+<div class="text-2xl font-black text-[#453B4D] tracking-tighter font-headline">
+                Strata
+            </div>
+<div class="hidden md:flex gap-8 items-center">
+<a class="text-slate-500 font-medium hover:text-[#453B4D] transition-colors" href="#">Dashboard</a>
+<a class="text-[#453B4D] border-b-2 border-[#453B4D] pb-1 font-bold" href="#">Events</a>
+<a class="text-slate-500 font-medium hover:text-[#453B4D] transition-colors" href="#">Staff</a>
+<a class="text-slate-500 font-medium hover:text-[#453B4D] transition-colors" href="#">Analytics</a>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">notifications</span>
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-container">
+<img alt="Admin Profile" data-alt="close-up portrait of a professional male architect in a bright modern office setting with soft natural light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnV77G-8G-5x8nCb5sknsKqKkzrQB4V5U2_i8n63h4YRmQtqqP7IEiM4qpIp-1O3_JubccZuyRTNFcbbnpOL63dLSFHqNoeHHkFeY77b-KBK2TBKyMyXmLsdS7gKR00pHTMbYvzGWKd8w6ihbWYxPspCM0dY3yNh2vjurDF7v-aol4Js6qWpqO5g6M6rPJ6cDjMu_5NnZYhiLq4qBajKsNMM125UlS3rURvwblRZ2vK4y40IhoyXiFc1fGY8Z5C5B7k8PTWNkBlfs"/>
+</div>
+</div>
+</nav>
+</header>
+<main class="pt-24 pb-32">
+<div class="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+<!-- Left Side: Editorial Content -->
+<div class="lg:col-span-7 flex flex-col space-y-12">
+<!-- Hero Image Container -->
+<div class="relative w-full aspect-[4/3] rounded-[2rem] overflow-hidden bg-surface-container-low group">
+<img alt="Strata Summit Venue" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="wide shot of a minimalist futuristic event space with clean white architectural lines and massive floor-to-ceiling windows showing a skyline" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAq7phgXXEo1OTkKP8EIsi2FDgSP62AUTiWO4hVmE_1Fmq4aiEeGiOL_B1njfU-k9G5N5HYxNOZmM7Kucmhnfn2Ba8SeloousGNLKO6LR9kGu94c0geVhPTsJm-_NFzOCO6nVdX7g5lMBNxdpMnEC-vcrxYfESJIL6zLpHWrvR8NsGj6KjZb_5A4WDpRqtzLs94rviXglPJk6uHklUNfVckea2oNrTGS4vZ0Ldmw53OQTW_WeldBg8FyabOrtYRWi9BcQcKNtsmHxw"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/40 to-transparent"></div>
+<div class="absolute bottom-8 left-8">
+<span class="inline-block px-4 py-1.5 rounded-full bg-secondary-container text-on-secondary-container font-label text-xs uppercase tracking-[0.15em] mb-4">
+                            Flagship Event
+                        </span>
+<h1 class="text-white text-5xl md:text-6xl font-headline font-extrabold tracking-tighter leading-[0.95]">
+                            Strata Summit 2024
+                        </h1>
+</div>
+</div>
+<!-- Event Details Bento Section -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="p-8 rounded-[1.5rem] bg-surface-container-low flex flex-col justify-between h-48 border border-outline-variant/10">
+<span class="material-symbols-outlined text-primary text-3xl">calendar_today</span>
+<div>
+<p class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-1">Date &amp; Time</p>
+<h3 class="text-xl font-headline font-bold text-on-surface">October 24, 2024 • 09:00 AM</h3>
+</div>
+</div>
+<div class="p-8 rounded-[1.5rem] bg-surface-container-low flex flex-col justify-between h-48 border border-outline-variant/10">
+<span class="material-symbols-outlined text-primary text-3xl">location_on</span>
+<div>
+<p class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-1">Location</p>
+<h3 class="text-xl font-headline font-bold text-on-surface">The Glass Pavilion, NYC</h3>
+</div>
+</div>
+</div>
+<div class="prose prose-on-surface">
+<p class="text-lg leading-relaxed text-on-surface-variant font-body">
+                        Join the industry's most influential voices for a day of architectural discovery and strategic networking. The Strata Summit is more than a conference; it's a curated exploration of the digital and physical frontiers of design.
+                    </p>
+</div>
+</div>
+<!-- Right Side: Registration Form -->
+<div class="lg:col-span-5 lg:sticky lg:top-32">
+<div class="bg-surface-container-lowest p-10 rounded-[2rem] editorial-shadow border border-outline-variant/15">
+<h2 class="text-2xl font-headline font-extrabold text-on-surface mb-2 tracking-tight">Register for Event</h2>
+<p class="text-on-surface-variant mb-10 font-body">Secure your position at the most exclusive summit of the year.</p>
+<form class="space-y-6">
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="block font-label text-xs font-semibold uppercase tracking-widest text-on-surface-variant ml-1">First Name</label>
+<input class="w-full px-5 py-4 rounded-xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary-container transition-all placeholder:text-outline/50" placeholder="Julian" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="block font-label text-xs font-semibold uppercase tracking-widest text-on-surface-variant ml-1">Last Name</label>
+<input class="w-full px-5 py-4 rounded-xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary-container transition-all placeholder:text-outline/50" placeholder="Voss" type="text"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="block font-label text-xs font-semibold uppercase tracking-widest text-on-surface-variant ml-1">Email Address</label>
+<input class="w-full px-5 py-4 rounded-xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary-container transition-all placeholder:text-outline/50" placeholder="voss@strata.ops" type="email"/>
+</div>
+<div class="space-y-2">
+<label class="block font-label text-xs font-semibold uppercase tracking-widest text-on-surface-variant ml-1">How did you hear about us?</label>
+<div class="relative">
+<select class="appearance-none w-full px-5 py-4 rounded-xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary-container transition-all cursor-pointer">
+<option>Select an option</option>
+<option>Industry Newsletter</option>
+<option>Social Media</option>
+<option>Colleague Referral</option>
+<option>Press Release</option>
+</select>
+<div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-on-surface-variant">expand_more</span>
+</div>
+</div>
+</div>
+<div class="pt-4">
+<button class="w-full py-5 px-8 bg-gradient-to-tr from-primary to-primary-container text-white rounded-full font-headline font-bold text-lg hover:scale-[1.02] active:scale-[0.98] transition-all editorial-shadow flex items-center justify-center gap-3" type="submit">
+<span>Complete Registration</span>
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+<p class="text-center font-label text-[10px] uppercase tracking-widest text-outline mt-6">
+                            Limited seats available. Standard RSVP terms apply.
+                        </p>
+</form>
+</div>
+<!-- Secondary Info Card -->
+<div class="mt-8 p-6 rounded-[1.5rem] bg-secondary-container/30 border border-secondary-container flex gap-4 items-start">
+<span class="material-symbols-outlined text-on-secondary-container mt-1">info</span>
+<div>
+<h4 class="font-headline font-bold text-on-secondary-container">Premium Access</h4>
+<p class="text-sm text-on-secondary-container opacity-80 leading-snug">Registration includes full-day access, curated lunch, and the evening closing reception.</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Mobile Bottom Navigation (Shared Component Integration) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-6 pb-8 pt-4 bg-surface/90 backdrop-blur-lg rounded-t-[1.5rem] shadow-[0_-12px_40px_rgba(74,69,75,0.06)] z-50">
+<div class="flex flex-col items-center justify-center text-slate-400 p-2">
+<span class="material-symbols-outlined" data-icon="qr_code_scanner">qr_code_scanner</span>
+<span class="font-label text-[10px] uppercase tracking-widest mt-1">Scanner</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 p-2">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label text-[10px] uppercase tracking-widest mt-1">Attendees</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-gradient-to-tr from-[#2e2536] to-[#453B4D] text-white rounded-2xl p-3 scale-110 -translate-y-2">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+<span class="font-label text-[10px] uppercase tracking-widest mt-1">Stats</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 p-2">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span class="font-label text-[10px] uppercase tracking-widest mt-1">Profile</span>
+</div>
+</nav>
+<!-- Map/Location Context -->
+<section class="max-w-7xl mx-auto px-6 mb-32">
+<div class="w-full h-96 rounded-[2.5rem] bg-surface-container overflow-hidden relative">
+<img alt="New York City Skyline" class="w-full h-full object-cover grayscale opacity-40 contrast-125" data-alt="dramatic black and white aerial shot of lower manhattan at sunset with strong contrast and architectural depth" data-location="New York City" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMLACB7uZLo5mRnXsYLd5W5ShoOyhuQNAj4t1Un2w-_0d-xjJ0e0u0_KThoLvs5crXwWqrZR0FSiJro3VXuTOq3aCOszApJLWB4pFRKdx2NBLy-oYEfsKvvwLN-p0Ut7zuQpELztneQiITV8Eb26W3VT7hG7tBI3_tyazlrevUtBrTAbWgaU6grtAXutFcanpU6lEY2L-ZdDUkWZR9-8Jox6InlUTpYtS546FUNPLAALto3ER1iZScvq2RQbkfLsKdxKxDKKGvUX8"/>
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="bg-surface p-8 rounded-3xl editorial-shadow text-center max-w-sm">
+<h4 class="font-headline font-extrabold text-2xl text-on-surface mb-2">The Glass Pavilion</h4>
+<p class="text-on-surface-variant font-body mb-4">West 18th Street, Chelsea Pier<br/>New York, NY 10011</p>
+<a class="text-primary font-bold flex items-center justify-center gap-2 hover:gap-3 transition-all" href="#">
+                        Get Directions <span class="material-symbols-outlined">north_east</span>
+</a>
+</div>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="bg-surface-container-low py-20">
+<div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-start gap-12">
+<div class="max-w-xs">
+<div class="text-2xl font-black text-[#453B4D] tracking-tighter font-headline mb-6">Strata</div>
+<p class="text-on-surface-variant text-sm font-body leading-relaxed">
+                    A digital curator for the next generation of architectural and strategic event experiences. Built for professionals who value depth and detail.
+                </p>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-16">
+<div class="space-y-4">
+<h5 class="font-label text-xs font-bold uppercase tracking-widest text-on-surface">Legal</h5>
+<ul class="space-y-2 text-sm text-on-surface-variant">
+<li><a class="hover:text-primary transition-colors" href="#">Privacy Policy</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Terms of Service</a></li>
+</ul>
+</div>
+<div class="space-y-4">
+<h5 class="font-label text-xs font-bold uppercase tracking-widest text-on-surface">Summit</h5>
+<ul class="space-y-2 text-sm text-on-surface-variant">
+<li><a class="hover:text-primary transition-colors" href="#">Speakers</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Agenda</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Sponsorships</a></li>
+</ul>
+</div>
+<div class="space-y-4">
+<h5 class="font-label text-xs font-bold uppercase tracking-widest text-on-surface">Connect</h5>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer transition-colors">brand_awareness</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer transition-colors">share</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer transition-colors">podcasts</span>
+</div>
+</div>
+</div>
+</div>
+<div class="max-w-7xl mx-auto px-6 mt-20 pt-8 border-t border-outline-variant/10 flex flex-col md:flex-row justify-between text-[10px] font-label uppercase tracking-[0.2em] text-outline">
+<p>© 2024 Strata Onyx Design. All Rights Reserved.</p>
+<p>Designed for Excellence.</p>
+</div>
+</footer>
+</body></html>

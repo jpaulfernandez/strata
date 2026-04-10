@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { signInAction, signInSchema, type SignInInput } from "./actions";
+import { authClient } from "@/server/auth/client";
+import { signInSchema, type SignInInput } from "@/lib/validations/auth";
 import { Loader2, Mail, Lock, AlertCircle } from "lucide-react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -24,14 +25,24 @@ export default function LoginPage() {
     setIsLoading(true);
     setServerError(null);
 
-    const formData = new FormData();
-    formData.append("email", data.email);
-    formData.append("password", data.password);
+    try {
+      const result = await authClient.signIn.email({
+        email: data.email,
+        password: data.password,
+      });
 
-    const result = await signInAction(formData);
+      if (result.error) {
+        setServerError(result.error.message || "Invalid email or password");
+        setIsLoading(false);
+        return;
+      }
 
-    if (result && "error" in result) {
-      setServerError(result.error);
+      // Redirect on success
+      router.push("/admin");
+      router.refresh();
+    } catch (error) {
+      console.error("Sign in error:", error);
+      setServerError("An error occurred during sign in. Please try again.");
       setIsLoading(false);
     }
   };
@@ -42,7 +53,7 @@ export default function LoginPage() {
         {/* Header */}
         <div className="text-center mb-10">
           <h1 className="font-display text-display-md text-on-surface mb-3">
-            EventFlow
+            Strata
           </h1>
           <p className="font-body text-body-lg text-on-surface-variant">
             Sign in to manage your events
@@ -132,20 +143,14 @@ export default function LoginPage() {
           {/* Sign Up Link */}
           <div className="mt-6 text-center">
             <p className="text-body-md text-on-surface-variant">
-              Do not have an account?{" "}
-              <Link
-                href="/signup"
-                className="text-primary hover:underline font-medium transition-colors"
-              >
-                Sign up
-              </Link>
+              Forgot your password? Contact your administrator.
             </p>
           </div>
         </div>
 
         {/* Footer */}
         <p className="text-center text-body-sm text-on-surface-variant mt-8">
-          Secure authentication powered by EventFlow
+          Secure authentication powered by Strata
         </p>
       </div>
     </div>

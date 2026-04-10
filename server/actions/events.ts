@@ -12,52 +12,8 @@ import {
 import { eq, desc, count } from "drizzle-orm"
 import { requireRole } from "@/server/auth/rbac"
 import { revalidatePath } from "next/cache"
+import { eventDetailsSchema, type EventDetailsInput } from "@/lib/validations/events"
 import { z } from "zod"
-
-// Validation schema for event slug
-const slugSchema = z
-  .string()
-  .min(1, "Slug is required")
-  .max(100, "Slug too long")
-  .regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens")
-
-// Validation schema for form fields
-const fieldOptionSchema = z.object({
-  label: z.string(),
-  value: z.string(),
-})
-
-const formFieldConfigSchema = z.object({
-  id: z.string(),
-  label: z.string().min(1, "Label is required"),
-  fieldType: z.enum(["short_text", "long_text", "dropdown", "multiple_choice", "checkboxes"]),
-  options: z.array(fieldOptionSchema).optional(),
-  isRequired: z.boolean(),
-})
-
-const customQuestionSchema = z.object({
-  id: z.string(),
-  question: z.string().min(1, "Question is required"),
-  fieldType: z.enum(["short_text", "long_text", "dropdown", "multiple_choice", "checkboxes"]),
-  options: z.array(fieldOptionSchema).optional(),
-  isRequired: z.boolean(),
-})
-
-// Main validation schema for event details
-export const eventDetailsSchema = z.object({
-  title: z.string().min(1, "Title is required").max(200, "Title too long"),
-  slug: slugSchema,
-  description: z.string().max(5000, "Description too long").optional(),
-  location: z.string().max(200, "Location too long").optional(),
-  eventDate: z.coerce.date().nullable().optional(),
-  eventEndDate: z.coerce.date().nullable().optional(),
-  coverImageUrl: z.string().url("Invalid URL").max(500, "URL too long").optional().or(z.literal("")),
-  status: z.enum(["draft", "open", "closed"]).optional(),
-  formFields: z.array(formFieldConfigSchema).optional(),
-  customQuestions: z.array(customQuestionSchema).optional(),
-})
-
-export type EventDetailsInput = z.infer<typeof eventDetailsSchema>
 
 /**
  * Get all events (requires admin role)
@@ -126,6 +82,37 @@ export async function getEventBySlug(slug: string): Promise<Event | null> {
 }
 
 /**
+ * Get public events for homepage (open and ended events only, no auth required)
+ */
+export async function getPublicEvents(): Promise<{
+  upcoming: Event[]
+  past: Event[]
+}> {
+  try {
+    // Get open events (upcoming) and ended events (past)
+    const allEvents = await db
+      .select()
+      .from(events)
+      .where(eq(events.status, "open"))
+      .orderBy(desc(events.eventDate))
+
+    const endedEvents = await db
+      .select()
+      .from(events)
+      .where(eq(events.status, "ended"))
+      .orderBy(desc(events.eventDate))
+
+    return {
+      upcoming: allEvents,
+      past: endedEvents,
+    }
+  } catch (error) {
+    console.error("Error fetching public events:", error)
+    return { upcoming: [], past: [] }
+  }
+}
+
+/**
  * Check if a slug is available
  * Optionally exclude an event ID (for updates)
  */
@@ -189,7 +176,9 @@ export async function createEvent(
         description: validated.description ?? null,
         location: validated.location ?? null,
         eventDate: validated.eventDate ?? null,
-        eventEndDate: validated.eventEndDate ?? null,
+        startTime: validated.startTime ?? null,
+        endTime: validated.endTime ?? null,
+        mapsLink: validated.mapsLink ?? null,
         coverImageUrl: validated.coverImageUrl || null,
         status: validated.status ?? "draft",
         formFields,
@@ -240,7 +229,9 @@ export async function updateEvent(
     if (validated.description !== undefined) updateData.description = validated.description ?? null
     if (validated.location !== undefined) updateData.location = validated.location ?? null
     if (validated.eventDate !== undefined) updateData.eventDate = validated.eventDate ?? null
-    if (validated.eventEndDate !== undefined) updateData.eventEndDate = validated.eventEndDate ?? null
+    if (validated.startTime !== undefined) updateData.startTime = validated.startTime ?? null
+    if (validated.endTime !== undefined) updateData.endTime = validated.endTime ?? null
+    if (validated.mapsLink !== undefined) updateData.mapsLink = validated.mapsLink ?? null
     if (validated.coverImageUrl !== undefined) updateData.coverImageUrl = validated.coverImageUrl || null
     if (validated.status !== undefined) updateData.status = validated.status
     if (validated.formFields !== undefined) {
@@ -329,7 +320,9 @@ export async function duplicateEvent(
         description: original.description,
         location: original.location,
         eventDate: original.eventDate,
-        eventEndDate: original.eventEndDate,
+        startTime: original.startTime,
+        endTime: original.endTime,
+        mapsLink: original.mapsLink,
         coverImageUrl: original.coverImageUrl,
         status: "draft", // Always create duplicates as draft
         formFields: original.formFields,
@@ -348,7 +341,42 @@ export async function duplicateEvent(
 }
 
 /**
- * Toggle event status: draft -> open -> closed -> draft (requires admin role)
+ * Set event to a specific status (requires admin role)
+ */
+export async function setEventStatus(
+  id: string,
+  status: "draft" | "open" | "closed" | "ended"
+): Promise<{ success: boolean; event?: Event; error?: string }> {
+  await requireRole("admin")
+
+  try {
+    const [event] = await db
+      .update(events)
+      .set({
+        status,
+        updatedAt: new Date(),
+      })
+      .where(eq(events.id, id))
+      .returning()
+
+    if (!event) {
+      return { success: false, error: "Event not found" }
+    }
+
+    revalidatePath("/admin/events")
+    revalidatePath(`/admin/events/${id}`)
+    revalidatePath(`/admin/dashboard/${id}`)
+    revalidatePath(`/events/${event.slug}`)
+
+    return { success: true, event }
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to update event status"
+    return { success: false, error: message }
+  }
+}
+
+/**
+ * Toggle event status: draft -> open -> closed -> ended -> draft (requires admin role)
  */
 export async function toggleEventStatus(
   id: string
@@ -362,11 +390,12 @@ export async function toggleEventStatus(
       return { success: false, error: "Event not found" }
     }
 
-    // Cycle through statuses: draft -> open -> closed -> draft
-    const statusCycle: Record<string, "draft" | "open" | "closed"> = {
+    // Cycle through statuses: draft -> open -> closed -> ended -> draft
+    const statusCycle: Record<string, "draft" | "open" | "closed" | "ended"> = {
       draft: "open",
       open: "closed",
-      closed: "draft",
+      closed: "ended",
+      ended: "draft",
     }
 
     const newStatus = statusCycle[current.status] ?? "draft"

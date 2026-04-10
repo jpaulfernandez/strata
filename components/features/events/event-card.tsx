@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import {
   Calendar,
@@ -12,6 +13,11 @@ import {
   Share2,
   Trash2,
   MoreVertical,
+  Check,
+  LayoutDashboard,
+  ScanLine,
+  ExternalLink,
+  Eye,
 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -24,6 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import type { Event } from "@/lib/db/schema"
 
 interface EventCardProps {
@@ -33,16 +40,18 @@ interface EventCardProps {
   onToggleStatus: (id: string) => Promise<{ success: boolean; event?: Event; error?: string }>
 }
 
-const statusColors: Record<string, "success" | "warning" | "secondary" | "error"> = {
+const statusColors: Record<string, "primary" | "warning" | "secondary" | "error"> = {
   draft: "secondary",
-  open: "success",
-  closed: "error",
+  open: "primary",
+  closed: "warning",
+  ended: "error",
 }
 
 const statusLabels: Record<string, string> = {
   draft: "Draft",
   open: "Open",
   closed: "Closed",
+  ended: "Ended",
 }
 
 export function EventCard({
@@ -51,10 +60,12 @@ export function EventCard({
   onDuplicate,
   onToggleStatus,
 }: EventCardProps) {
+  const router = useRouter()
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false)
   const [isDeleting, setIsDeleting] = React.useState(false)
   const [isDuplicating, setIsDuplicating] = React.useState(false)
   const [isTogglingStatus, setIsTogglingStatus] = React.useState(false)
+  const [shareCopied, setShareCopied] = React.useState(false)
 
   const handleDelete = async () => {
     setIsDeleting(true)
@@ -90,44 +101,61 @@ export function EventCard({
     }
   }
 
+  const handleShare = () => {
+    const url = `${window.location.origin}/e/${event.slug}`
+    navigator.clipboard.writeText(url)
+    setShareCopied(true)
+    setTimeout(() => setShareCopied(false), 2000)
+  }
+
   const formattedDate = event.eventDate
     ? format(new Date(event.eventDate), "MMM d, yyyy")
     : "No date set"
 
+  // Draft events go to edit, published/open/closed events go to dashboard
+  const titleHref = event.status === "draft"
+    ? `/admin/events/${event.id}/edit`
+    : `/admin/dashboard/${event.id}`
+
   return (
     <>
-      <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-[var(--shadow-ghost)]">
+      <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-[var(--shadow-ghost)] hover:border-[rgba(69,59,77,0.2)]">
         {/* Cover Image or Gradient Placeholder */}
-        <div className="relative h-40 -mx-6 -mt-6 mb-4 overflow-hidden">
-          {event.coverImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={event.coverImageUrl}
-              alt={event.title}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div
-              className="h-full w-full"
-              style={{
-                background:
-                  "linear-gradient(135deg, var(--primary) 0%, var(--primary-container) 100%)",
-              }}
-            />
-          )}
-          {/* Status Badge Overlay */}
-          <div className="absolute top-3 right-3">
-            <Badge variant={statusColors[event.status]}>
-              {statusLabels[event.status]}
-            </Badge>
+        <Link href={titleHref}>
+          <div className="relative h-40 -mx-6 -mt-6 mb-4 overflow-hidden cursor-pointer">
+            {event.coverImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={event.coverImageUrl}
+                alt={event.title}
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+            ) : (
+              <div
+                className="h-full w-full transition-opacity duration-300 group-hover:opacity-90"
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--primary) 0%, var(--primary-container) 100%)",
+                }}
+              />
+            )}
           </div>
+        </Link>
+
+        {/* Status Badge Overlay */}
+        <div className="absolute top-3 right-3">
+          <Badge variant={statusColors[event.status]}>
+            {statusLabels[event.status]}
+          </Badge>
         </div>
 
         {/* Content */}
         <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-[var(--on-surface)] line-clamp-1">
-            {event.title}
-          </h3>
+          <Link href={titleHref}>
+            <h3 className="text-lg font-semibold text-[var(--on-surface)] line-clamp-1 hover:text-[var(--primary)] transition-colors cursor-pointer">
+              {event.title}
+            </h3>
+          </Link>
 
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 text-sm text-[var(--on-surface-variant)]">
@@ -145,58 +173,86 @@ export function EventCard({
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2 pt-2">
-            <Link href={`/admin/events/${event.id}`}>
+            <Link href={`/admin/dashboard/${event.id}`}>
               <Button variant="ghost" size="sm" className="gap-1.5">
-                <Edit3 className="h-3.5 w-3.5" />
-                Edit
+                <LayoutDashboard className="h-3.5 w-3.5" />
+                Dashboard
               </Button>
             </Link>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1.5"
-              onClick={handleDuplicate}
-              disabled={isDuplicating}
-            >
-              <Copy className="h-3.5 w-3.5" />
-              {isDuplicating ? "Duplicating..." : "Duplicate"}
-            </Button>
+            <Link href={`/admin/scan/${event.id}`}>
+              <Button variant="ghost" size="sm" className="gap-1.5">
+                <ScanLine className="h-3.5 w-3.5" />
+                Scanner
+              </Button>
+            </Link>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1.5"
-              onClick={handleToggleStatus}
-              disabled={isTogglingStatus}
-            >
-              <ToggleLeft className="h-3.5 w-3.5" />
-              {isTogglingStatus ? "Updating..." : "Toggle Status"}
-            </Button>
+            {/* Preview Link (for draft) or Share Link (for open/closed/ended) */}
+            {event.status === "draft" ? (
+              <Link href={`/e/${event.slug}?preview=true`} target="_blank">
+                <Button variant="ghost" size="sm" className="gap-1.5">
+                  <Eye className="h-3.5 w-3.5" />
+                  Preview
+                </Button>
+              </Link>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5"
+                onClick={handleShare}
+              >
+                {shareCopied ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 text-green-600" />
+                    <span className="text-green-600">Copied</span>
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="h-3.5 w-3.5" />
+                    Share
+                  </>
+                )}
+              </Button>
+            )}
 
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => {
-                // Share functionality - copy public URL to clipboard
-                const url = `${window.location.origin}/events/${event.slug}`
-                navigator.clipboard.writeText(url)
-              }}
+            {/* More Actions Dropdown */}
+            <DropdownMenu
+              trigger={
+                <Button variant="ghost" size="sm" className="px-2">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              }
             >
-              <Share2 className="h-3.5 w-3.5" />
-              Share
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50"
-              onClick={() => setIsDeleteDialogOpen(true)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Delete
-            </Button>
+              <DropdownMenuItem onClick={() => router.push(`/admin/events/${event.id}/edit`)}>
+                <span className="flex items-center gap-2">
+                  <Edit3 className="h-4 w-4" />
+                  Edit
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleDuplicate} disabled={isDuplicating}>
+                <span className="flex items-center gap-2">
+                  <Copy className="h-4 w-4" />
+                  {isDuplicating ? "Duplicating..." : "Duplicate"}
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleToggleStatus} disabled={isTogglingStatus}>
+                <span className="flex items-center gap-2">
+                  <ToggleLeft className="h-4 w-4" />
+                  {isTogglingStatus ? "Updating..." : "Toggle Status"}
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => setIsDeleteDialogOpen(true)}
+                className="text-red-600 hover:text-red-700"
+              >
+                <span className="flex items-center gap-2">
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </span>
+              </DropdownMenuItem>
+            </DropdownMenu>
           </div>
         </div>
       </Card>

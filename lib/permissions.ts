@@ -1,7 +1,7 @@
 /**
  * Permission constants and role hierarchy for Role-Based Access Control (RBAC)
  *
- * This file defines the permission system for EventFlow.
+ * This file defines the permission system for Strata.
  * Roles are hierarchical: super_admin > admin > staff
  */
 
@@ -151,7 +151,8 @@ export function hasMinimumRole(
   const userRoleIndex = roleOrder.indexOf(userRole);
   const requiredRoleIndex = roleOrder.indexOf(requiredRole);
 
-  return userRoleIndex <= requiredRoleIndex;
+  // Higher index = higher role, so user index must be >= required index
+  return userRoleIndex >= requiredRoleIndex;
 }
 
 /**

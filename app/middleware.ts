@@ -9,6 +9,9 @@ import {
   getAccessDeniedUrl,
 } from "@/server/auth/middleware-rbac";
 
+// Configure middleware to use Node.js runtime (required for database access)
+export const runtime = "nodejs";
+
 /**
  * Authentication & RBAC Middleware
  *

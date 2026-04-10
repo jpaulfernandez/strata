@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { Button, Input, Textarea, Label, Card, Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui"
-import { createEvent, eventDetailsSchema, EventDetailsInput } from "@/server/actions/events"
+import { createEvent } from "@/server/actions/events"
+import { eventDetailsSchema, type EventDetailsInput } from "@/lib/validations/events"
 import { zodErrorToFormErrors, generateSlug } from "@/lib/utils"
 
 const statusOptions = [
@@ -55,13 +56,25 @@ export default function CreateEventPage() {
 
     const formData = new FormData(formRef.current)
 
+    // Combine date and time for eventDate
+    const eventDateStr = formData.get("eventDate") as string
+    const startTimeStr = formData.get("startTime") as string || "10:00"
+    let eventDateValue: Date | undefined
+    if (eventDateStr) {
+      const [year, month, day] = eventDateStr.split("-").map(Number)
+      const [hours, minutes] = startTimeStr.split(":").map(Number)
+      eventDateValue = new Date(year, month - 1, day, hours || 10, minutes || 0)
+    }
+
     const input: EventDetailsInput = {
       title: title.trim(),
       slug: slug.trim(),
       description: formData.get("description") as string || undefined,
       location: formData.get("location") as string || undefined,
-      eventDate: formData.get("eventDate") ? new Date(formData.get("eventDate") as string) : undefined,
-      eventEndDate: formData.get("eventEndDate") ? new Date(formData.get("eventEndDate") as string) : undefined,
+      eventDate: eventDateValue,
+      startTime: startTimeStr || undefined,
+      endTime: formData.get("endTime") as string || undefined,
+      mapsLink: formData.get("mapsLink") as string || undefined,
       coverImageUrl: formData.get("coverImageUrl") as string || undefined,
       status,
       formFields: [],
@@ -173,28 +186,62 @@ export default function CreateEventPage() {
                 />
               </div>
 
-              {/* Event Date & Time */}
+              {/* Event Date */}
               <div>
-                <Label htmlFor="eventDate">Event Date & Time</Label>
+                <Label htmlFor="eventDate">Event Date</Label>
                 <Input
                   id="eventDate"
                   name="eventDate"
-                  type="datetime-local"
+                  type="date"
                   error={errors.eventDate}
                 />
               </div>
 
-              {/* Event End Date & Time */}
+              {/* Time fields */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Start Time */}
+                <div>
+                  <Label htmlFor="startTime">Start Time</Label>
+                  <Input
+                    id="startTime"
+                    name="startTime"
+                    type="time"
+                    defaultValue="10:00"
+                    error={errors.startTime}
+                  />
+                  <p className="mt-1 text-xs text-[var(--on-surface-variant)]">
+                    e.g., 10:00 AM
+                  </p>
+                </div>
+
+                {/* End Time */}
+                <div>
+                  <Label htmlFor="endTime">End Time</Label>
+                  <Input
+                    id="endTime"
+                    name="endTime"
+                    type="time"
+                    defaultValue="17:00"
+                    error={errors.endTime}
+                  />
+                  <p className="mt-1 text-xs text-[var(--on-surface-variant)]">
+                    e.g., 5:00 PM
+                  </p>
+                </div>
+              </div>
+
+              {/* Maps Link */}
               <div>
-                <Label htmlFor="eventEndDate">Event End Date & Time</Label>
+                <Label htmlFor="mapsLink">Maps Link</Label>
                 <Input
-                  id="eventEndDate"
-                  name="eventEndDate"
-                  type="datetime-local"
-                  error={errors.eventEndDate}
+                  id="mapsLink"
+                  name="mapsLink"
+                  type="url"
+                  placeholder="https://maps.google.com/..."
+                  error={errors.mapsLink}
                 />
                 <p className="mt-1 text-xs text-[var(--on-surface-variant)]">
-                  Optional. For multi-day events.
+                  Optional Google Maps link for the event location.
                 </p>
               </div>
 

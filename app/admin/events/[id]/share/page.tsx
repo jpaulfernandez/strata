@@ -50,7 +50,7 @@ export default function ShareEventPage() {
   }, [eventId])
 
   // Build the public registration URL
-  const registrationUrl = event ? `${appUrl}/events/${event.slug}` : ""
+  const registrationUrl = event ? `${appUrl}/e/${event.slug}` : ""
 
   // Copy URL to clipboard
   async function handleCopy() {
@@ -79,16 +79,16 @@ export default function ShareEventPage() {
   }
 
   // Get badge variant based on status
-  function getStatusBadgeVariant(status: string): "default" | "secondary" | "outline" | "success" | "warning" | "error" {
+  function getStatusBadgeVariant(status: string): "primary" | "secondary" | "outline" | "warning" | "error" {
     switch (status) {
       case "open":
-        return "success"
+        return "primary"
       case "closed":
         return "warning"
       case "draft":
         return "secondary"
       default:
-        return "default"
+        return "secondary"
     }
   }
 
@@ -145,7 +145,7 @@ export default function ShareEventPage() {
             <h2 className="text-lg font-semibold text-[var(--on-surface)]">{event?.title}</h2>
             <div className="mt-2 flex items-center gap-2">
               <Badge variant={getStatusBadgeVariant(event?.status ?? "draft")}>
-                {event?.status?.charAt(0).toUpperCase() + event?.status?.slice(1)}
+                {event?.status ? event.status.charAt(0).toUpperCase() + event.status.slice(1) : "Draft"}
               </Badge>
             </div>
           </div>

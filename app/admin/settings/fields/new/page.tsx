@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, Plus, X } from "lucide-react"
 import { Button, Input, Label, Card, Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui"
-import { createGlobalField, globalFieldSchema, GlobalFieldInput } from "@/server/actions/settings"
+import { createGlobalField } from "@/server/actions/settings"
+import { globalFieldSchema, type GlobalFieldInput } from "@/lib/validations/settings"
 import { zodErrorToFormErrors } from "@/lib/utils"
 
 const fieldTypes = [

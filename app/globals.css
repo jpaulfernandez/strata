@@ -8,6 +8,7 @@
   /* Primary palette */
   --primary: #2e2536;
   --primary-container: #453b4d;
+  --on-primary-container: #ffffff;
 
   /* Surface hierarchy */
   --surface: #faf9fb;
@@ -114,4 +115,14 @@ html {
 
 .btn-secondary:hover {
   background-color: var(--surface-container-low);
+}
+
+/* Purple accent background for hover states */
+.purple-accent {
+  background: linear-gradient(135deg, rgba(69, 59, 77, 0.08) 0%, rgba(232, 219, 239, 0.15) 100%);
+}
+
+/* Purple glow for focus/hover effects */
+.purple-glow {
+  box-shadow: 0 0 0 1px rgba(69, 59, 77, 0.15), 0 4px 12px rgba(69, 59, 77, 0.1);
 }

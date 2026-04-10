@@ -1,28 +1,13 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { users } from "@/lib/db/schema"
+import { user } from "@/lib/db/schema"
 import { eq, desc } from "drizzle-orm"
 import { getCurrentUser, requireRole } from "@/server/auth/rbac"
 import { revalidatePath } from "next/cache"
-import { z } from "zod"
-import bcrypt from "bcrypt"
-
-// Schema for inviting a new staff member
-export const inviteStaffSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  fullName: z.string().min(1, "Name is required").max(100, "Name too long"),
-  role: z.enum(["admin", "staff"]),
-})
-
-// Schema for updating a staff member's role
-export const updateRoleSchema = z.object({
-  userId: z.string(),
-  role: z.enum(["admin", "staff"]),
-})
-
-export type InviteStaffInput = z.infer<typeof inviteStaffSchema>
-export type UpdateRoleInput = z.infer<typeof updateRoleSchema>
+import { addStaffSchema, updateRoleSchema, type AddStaffInput, type UpdateRoleInput } from "@/lib/validations/staff"
+import { auth } from "@/server/auth"
+import { headers } from "next/headers"
 
 /**
  * Get all staff members (for admin)
@@ -33,14 +18,14 @@ export async function getStaff() {
   try {
     const staff = await db
       .select({
-        id: users.id,
-        email: users.email,
-        fullName: users.fullName,
-        role: users.role,
-        createdAt: users.createdAt,
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        createdAt: user.createdAt,
       })
-      .from(users)
-      .orderBy(desc(users.createdAt))
+      .from(user)
+      .orderBy(desc(user.createdAt))
 
     return staff
   } catch (error) {
@@ -56,13 +41,13 @@ export async function getStaffData() {
   try {
     const staff = await db
       .select({
-        id: users.id,
-        email: users.email,
-        fullName: users.fullName,
-        role: users.role,
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
       })
-      .from(users)
-      .orderBy(desc(users.createdAt))
+      .from(user)
+      .orderBy(desc(user.createdAt))
 
     return staff
   } catch (error) {
@@ -72,32 +57,56 @@ export async function getStaffData() {
 }
 
 /**
- * Invite a new staff member
+ * Add a new staff member directly
  */
-export async function inviteStaff(input: InviteStaffInput) {
+export async function addStaff(input: AddStaffInput) {
   await requireRole("admin")
 
   try {
-    const validated = inviteStaffSchema.parse(input)
+    const validated = addStaffSchema.parse(input)
 
-    const tempPassword = Math.random().toString(36).slice(-8)
-    const hashedPassword = await bcrypt.hash(tempPassword, 10)
+    // Check if user already exists
+    const [existingUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.email, validated.email))
+      .limit(1)
 
-    const [user] = await db
-      .insert(users)
-      .values({
-        email: validated.email,
-        fullName: validated.fullName,
-        password: hashedPassword,
-        role: validated.role,
+    if (existingUser) {
+      return { success: false, error: "A user with this email already exists" }
+    }
+
+    // Use better-auth to create the user with password
+    const requestHeaders = await headers()
+
+    try {
+      const result = await auth.api.signUpEmail({
+        body: {
+          email: validated.email,
+          password: validated.password,
+          name: validated.name,
+        },
+        headers: requestHeaders,
       })
-      .returning()
 
-    revalidatePath("/admin/settings/staff")
+      // Update the role after creation
+      if (result.user) {
+        await db
+          .update(user)
+          .set({ role: validated.role })
+          .where(eq(user.id, result.user.id))
+      }
 
-    return { success: true, user, tempPassword }
-  } catch (error: any) {
-    return { success: false, error: error.message || "Failed to invite staff" }
+      revalidatePath("/admin/settings/staff")
+
+      return { success: true }
+    } catch (signupError: unknown) {
+      const err = signupError as { message?: string; body?: { message?: string } }
+      return { success: false, error: err.body?.message || err.message || "Failed to create user" }
+    }
+  } catch (error: unknown) {
+    const err = error as { message?: string }
+    return { success: false, error: err.message || "Failed to add staff member" }
   }
 }
 
@@ -115,17 +124,18 @@ export async function updateStaffRole(input: UpdateRoleInput) {
       return { success: false, error: "You cannot change your own role" }
     }
 
-    const [user] = await db
-      .update(users)
-      .set({ role: validated.role })
-      .where(eq(users.id, validated.userId))
+    const [updatedUser] = await db
+      .update(user)
+      .set({ role: validated.role, updatedAt: new Date() })
+      .where(eq(user.id, validated.userId))
       .returning()
 
     revalidatePath("/admin/settings/staff")
 
-    return { success: true, user }
-  } catch (error: any) {
-    return { success: false, error: error.message || "Failed to update role" }
+    return { success: true, user: updatedUser }
+  } catch (error: unknown) {
+    const err = error as { message?: string }
+    return { success: false, error: err.message || "Failed to update role" }
   }
 }
 
@@ -141,12 +151,13 @@ export async function removeStaff(userId: string) {
       return { success: false, error: "You cannot remove yourself" }
     }
 
-    await db.delete(users).where(eq(users.id, userId))
+    await db.delete(user).where(eq(user.id, userId))
 
     revalidatePath("/admin/settings/staff")
 
     return { success: true }
-  } catch (error: any) {
-    return { success: false, error: error.message || "Failed to remove staff" }
+  } catch (error: unknown) {
+    const err = error as { message?: string }
+    return { success: false, error: err.message || "Failed to remove staff" }
   }
 }

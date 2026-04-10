@@ -31,6 +31,8 @@ This file serves as the source of truth for the EventFlow codebase. It provides 
 | Validation | Zod + React Hook Form |
 | Email | Resend |
 | QR Codes | qrcode + html5-qrcode |
+| Drag & Drop | @dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities |
+| Date Utils | date-fns |
 
 ---
 
@@ -41,29 +43,77 @@ This file serves as the source of truth for the EventFlow codebase. It provides 
   /api                  # API routes
     /auth/[...all]      # Better Auth catch-all handler
   /admin                # Admin protected routes (requires admin+)
+    layout.tsx          # Floating sidebar with glassmorphism
+    page.tsx            # Admin dashboard redirect
+    /events
+      page.tsx          # Event list (grid/list view, persisted)
+      /new              # Create event page
+      /[id]/edit        # Edit event (tabbed: Details/Form)
+      /[id]/share       # Share panel
+      /[id]/registrants # Registrant list with CSV export
+    /dashboard/[id]     # Live check-in dashboard
+    /scan/[id]          # QR scanner page
+    /settings           # Settings pages
+      /fields           # Global form fields
+      /fields/new       # Create global field
+      /staff            # Staff management
+  /e/[slug]             # Public event registration
+    page.tsx            # Registration form
+    /thanks             # Thank-you page with QR
+  /ticket/[qrToken]     # Public ticket page
   /login                # Login page
-  /checkin              # Check-in interface
+  /signup               # Signup page
   layout.tsx            # Root layout with fonts
   page.tsx              # Home page
   middleware.ts         # Auth + RBAC middleware
 
 /components            # Reusable UI components
-  /ui                   # Generic UI primitives (Button, Card, Input, etc.)
+  /ui                   # Generic UI primitives
+    button.tsx          # Button with variants (primary, secondary, ghost)
+    card.tsx            # Card container
+    input.tsx           # Text input with error state
+    label.tsx           # Form label
+    textarea.tsx        # Multi-line input
+    select.tsx          # Dropdown selection
+    dialog.tsx          # Modal dialog
+    badge.tsx           # Status tag with variants (primary, secondary, error, warning)
+    dropdown-menu.tsx   # Portal-based dropdown menu
+    index.ts            # Barrel exports
   /features             # Feature-specific components
-    /events             # Event-related feature components
-      event-card.tsx    # Event card display
-      event-list.tsx    # Event list with actions
-      form-builder.tsx  # Unified form builder with drag-and-drop (dnd-kit)
+    /events
+      event-card.tsx    # Event card with ellipsis menu, share button
+      event-list.tsx    # Event list with grid/list toggle (localStorage)
+      form-builder.tsx  # Unified form builder (single column, dnd-kit)
+      form-preview.tsx  # Live preview of registration form
 
 /lib                   # Shared utilities
   /db                   # Database schema and connection
+    schema.ts           # Drizzle schema with events, registrants, etc.
+    index.ts            # Database client
+  /validations          # Zod schemas (NOT in "use server" files!)
+    auth.ts             # Auth-related schemas (signIn, signUp)
+    events.ts           # Event validation (title, slug, startTime, endTime, mapsLink)
+    settings.ts         # Global field schemas
+    staff.ts            # Staff invitation/role schemas
+    registration.ts     # Public registration validation
   /permissions.ts       # Permission constants and helpers
-  /utils.ts             # General utilities
+  /utils.ts             # General utilities (generateSlug, formatDateTime, zodErrorToFormErrors)
   /qr.ts                # QR code generation
 
 /server                # Server-only code (not exposed to client)
   /auth                # Auth configuration and middleware helpers
+    auth.ts             # Better Auth configuration
+    rbac.ts             # getCurrentUser, requireRole
+    client.ts           # authClient for client-side auth
   /actions             # Server Actions for mutations
+    events.ts           # CRUD for events (create, update, delete, duplicate, toggleStatus)
+    registrants.ts      # Registration and registrant management
+    checkin.ts          # Check-in operations (QR, manual, VIP toggle)
+    settings.ts         # Global fields management
+    staff.ts            # Staff CRUD operations
+    export.ts           # CSV export functionality
+  /email               # Email templates and sending
+    index.ts            # Resend integration with confirmation emails
   /db                  # Database seeds
 
 /types                 # TypeScript type definitions
@@ -79,12 +129,36 @@ This file serves as the source of truth for the EventFlow codebase. It provides 
 
 | Table | Purpose |
 |-------|---------|
-| `users` | Staff/admin accounts with roles |
+| `user` | Staff/admin accounts with roles (Better Auth) |
+| `session` | User sessions (Better Auth) |
+| `account` | OAuth accounts (Better Auth) |
+| `verification` | Email verification tokens (Better Auth) |
 | `events` | Event definitions with form configurations |
 | `registrants` | Attendees registered for events |
 | `checkins` | Check-in records with timestamps |
 | `vipNotifications` | VIP arrival notifications |
 | `globalFields` | Reusable form field templates |
+
+### Events Table Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | uuid | Primary key |
+| `slug` | text | URL-friendly identifier (unique) |
+| `title` | text | Event title |
+| `description` | text | Event description |
+| `coverImageUrl` | text | Cover image URL |
+| `location` | text | Event location |
+| `eventDate` | timestamp with timezone | Event date (date + start time combined) |
+| `startTime` | text | Start time in HH:MM format (e.g., "10:00") |
+| `endTime` | text | End time in HH:MM format (e.g., "17:00") |
+| `mapsLink` | text | Optional Google Maps URL |
+| `status` | enum | draft, open, or closed |
+| `formFields` | jsonb | Enabled global fields configuration |
+| `customQuestions` | jsonb | Custom questions for this event |
+| `createdBy` | text | User ID who created the event |
+| `createdAt` | timestamp | Creation timestamp |
+| `updatedAt` | timestamp | Last update timestamp |
 
 ### Enums
 
@@ -95,7 +169,7 @@ This file serves as the source of truth for the EventFlow codebase. It provides 
 
 ### Key Relationships
 
-- `events.createdBy` → `users.id`
+- `events.createdBy` → `user.id`
 - `registrants.eventId` → `events.id`
 - `checkins.registrantId` → `registrants.id`
 - `checkins.eventId` → `events.id`
@@ -144,22 +218,72 @@ Route protection is enforced in `app/middleware.ts`:
 
 | Component | Description |
 |-----------|-------------|
-| `Button` | Primary, secondary, ghost variants |
+| `Button` | Primary, secondary, ghost variants with purple gradient for primary |
 | `Card` | Content container with elevation |
-| `Input` | Text input field |
+| `Input` | Text input field with error state |
 | `Label` | Form label |
 | `Textarea` | Multi-line text input |
 | `Select` | Dropdown selection |
 | `Dialog` | Modal dialog |
-| `Badge` | Status/category tag |
+| `Badge` | Status/category tag with variants: primary (purple), secondary, error, warning |
+| `DropdownMenu` | Portal-based dropdown with items and separators |
 
 ### Feature Components (`components/features/`)
 
 | Component | Description |
 |-----------|-------------|
-| `events/event-card.tsx` | Event card with cover image, status badge |
-| `events/event-list.tsx` | Event list with actions menu |
-| `events/form-builder.tsx` | Unified form builder with drag-and-drop for global fields and custom questions |
+| `events/event-card.tsx` | Event card with cover image, status badge, clickable title (draft→edit, published→public), ellipsis menu (duplicate, toggle status, delete), share button with "Copied" feedback |
+| `events/event-list.tsx` | Event list with grid/list toggle (persisted to localStorage), search, status filter |
+| `events/form-builder.tsx` | Unified form builder with single-column layout, drag-and-drop for global fields and custom questions using @dnd-kit |
+| `events/form-preview.tsx` | Live preview of registration form as it appears to registrants |
+
+---
+
+## Admin Layout
+
+### Floating Sidebar
+
+The admin layout (`app/admin/layout.tsx`) features:
+- **Floating sidebar** with glassmorphism effect (`backdrop-blur-xl`, semi-transparent background)
+- **Sticky positioning** within content area
+- **Purple gradient** for active navigation items
+- **Purple gradient text** for "EventFlow" brand
+- **Sign Out** with red hover state
+
+---
+
+## Event Management
+
+### Event List Page
+
+- **Grid/List toggle**: User preference saved to `localStorage` (key: `eventflow-events-view-mode`)
+- **Search**: Filters by title, location, or slug
+- **Status filter**: All, Draft, Open, Closed
+- **Purple badges** for "Open" status events
+
+### Event Card
+
+- **Clickable title**: Draft events navigate to `/edit`, published events navigate to public page
+- **Ellipsis menu**: Contains Duplicate, Toggle Status, Delete actions
+- **Share button**: Copies public URL with "Copied" feedback
+- **Edit button**: Direct link to edit page
+
+### Edit Event Page
+
+- **Tabbed layout**: "Event Details" tab and "Registration Form" tab
+- **Event Details tab**: Title, slug, description, location, date, start/end time, maps link, cover image, status
+- **Registration Form tab**: Split view with FormBuilder (left) and FormPreview (right)
+- **Unsaved changes detection**: Tracks all form state, shows warning banner and fixed save bar
+- **Fixed save bar**: Appears at bottom when changes detected, with "Discard" and "Save Changes" buttons
+- **Success toast**: Green notification when event is saved successfully
+- **Browser warning**: Alerts user if they try to leave with unsaved changes
+
+### Form Builder
+
+- **Single-column layout**: Global Fields section on top, Custom Questions section below
+- **Drag-and-drop**: Using @dnd-kit for reordering enabled fields
+- **Toggle checkboxes**: Enable/disable global fields per event
+- **Custom questions**: Add, edit, delete with dialog form
 
 ---
 
@@ -171,16 +295,23 @@ Route protection is enforced in `app/middleware.ts`:
 |------|-------------|
 | `/` | Home page |
 | `/login` | Login page |
-| `/register` | Registration page |
+| `/signup` | Signup page |
+| `/e/[slug]` | Public event registration form |
+| `/e/[slug]/thanks` | Thank-you page with QR code |
+| `/ticket/[qrToken]` | Shareable ticket page (mobile-friendly) |
 
 ### Protected Routes (Admin+)
 
 | Path | Description |
 |------|-------------|
 | `/admin` | Admin dashboard |
-| `/admin/events` | Event list |
+| `/admin/events` | Event list (grid/list view) |
 | `/admin/events/new` | Create new event |
-| `/admin/events/[id]/edit` | Edit existing event |
+| `/admin/events/[id]/edit` | Edit existing event (tabbed) |
+| `/admin/events/[id]/share` | Share event public link |
+| `/admin/events/[id]/registrants` | Registrant list with CSV export |
+| `/admin/dashboard/[id]` | Live check-in dashboard |
+| `/admin/scan/[id]` | QR scanner page |
 | `/admin/settings` | App settings |
 | `/admin/settings/fields` | Global form fields |
 | `/admin/settings/fields/new` | Create global field |
@@ -199,8 +330,25 @@ Route protection is enforced in `app/middleware.ts`:
 | File | Purpose |
 |------|---------|
 | `events.ts` | Event CRUD operations (create, update, delete, duplicate, status toggle) |
+| `registrants.ts` | Registration and registrant management (register, get by QR, check duplicate) |
+| `checkin.ts` | Check-in operations (QR scan, manual email, VIP toggle) |
 | `settings.ts` | Manage global settings and global fields |
 | `staff.ts` | Staff CRUD operations |
+| `export.ts` | CSV export functionality |
+
+### Important: "use server" Constraints
+
+Files with `"use server"` directive **can only export async functions**. Never export:
+- Zod schemas (objects)
+- TypeScript types
+- Constants or configuration objects
+
+**Pattern:**
+```
+/lib/validations/*.ts    → Zod schemas & types (shared, no "use server")
+/server/actions/*.ts     → Async server actions only (import schemas, don't export)
+/app/*/page.tsx          → Client components import schemas from /lib/validations
+```
 
 ---
 
@@ -237,6 +385,7 @@ See `DESIGN.md` for the complete design system documentation. Key principles:
 - **Elevation**: Tonal layering, ghost shadows
 - **Components**: No 1px borders, 1.5rem border radius, gradient buttons
 - **No-lines**: Use background color shifts for sectioning
+- **Glassmorphism**: Semi-transparent backgrounds with backdrop blur for floating elements
 
 ---
 

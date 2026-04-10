@@ -38,3 +38,9 @@ export {
   DialogTitle,
   DialogDescription,
 } from "./dialog"
+
+export {
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "./dropdown-menu"

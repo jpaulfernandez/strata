@@ -2,25 +2,11 @@
  * Middleware helpers for session validation and RBAC
  *
  * These functions are designed to be used in Next.js middleware
- * where we need to validate sessions and check roles without making database calls directly.
- *
- * The middleware runs on the edge, so we use the better-auth API
- * to validate sessions via HTTP requests.
+ * where we need to validate sessions and check roles.
  */
 
-import { createAuthClient } from "better-auth/client";
 import type { UserRole } from "@/lib/permissions";
 import { isValidRole } from "@/lib/permissions";
-
-/**
- * Create an auth client for middleware use
- * Uses the same configuration as the server auth client
- */
-export function getMiddlewareAuthClient(baseURL?: string) {
-  return createAuthClient({
-    baseURL: baseURL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-  });
-}
 
 /**
  * Role-based route access definitions
@@ -117,11 +103,12 @@ export function hasAccessLevel(
 /**
  * Validate session from cookies in middleware
  *
- * This function reads the session cookie and validates it
- * by calling the better-auth API endpoint.
+ * Since middleware runs on the edge, we decode the session token
+ * directly from the cookie to check basic validity.
+ * Full validation happens in server actions.
  *
  * @param cookieHeader - The cookie header string from the request
- * @returns The session, user, and role if valid, null otherwise
+ * @returns The user role if valid session exists, null otherwise
  */
 export async function validateSessionFromCookies(
   cookieHeader: string | null
@@ -135,51 +122,33 @@ export async function validateSessionFromCookies(
   }
 
   try {
-    const authClient = getMiddlewareAuthClient();
-
     // Parse cookies from the header
     const cookies = parseCookies(cookieHeader);
-    const sessionCookie = cookies["better-auth.session"];
+    const sessionCookie = cookies["better-auth.session_token"];
 
     if (!sessionCookie) {
       return null;
     }
 
-    // Create a request with the session cookie to get the session
-    // better-auth's getSession will validate the cookie via its API
-    const response = await authClient.getSession() as unknown as {
-      data?: {
-        session?: unknown;
-        user?: {
-          id: string;
-          email: string;
-          name: string;
-          image?: string;
-          createdAt: string;
-          updatedAt: string;
-          [key: string]: unknown;
-        };
-      };
-    };
+    // Decode the session token to extract user info
+    // The session token contains base64 encoded JSON
+    const decoded = decodeSessionToken(sessionCookie);
 
-    // Check if we have valid session data in the response
-    if (response?.data?.session && response?.data?.user) {
-      // Extract role from customFields if available
-      let role: UserRole = "staff"; // Default role
-
-      const customFields = response.data.user as Record<string, unknown>;
-      if (customFields.role && isValidRole(String(customFields.role))) {
-        role = String(customFields.role) as UserRole;
-      }
-
-      return {
-        session: response.data.session,
-        user: response.data.user,
-        role,
-      };
+    if (!decoded) {
+      return null;
     }
 
-    return null;
+    // Extract role from the decoded token or default to staff
+    let role: UserRole = "staff";
+    if (decoded.role && isValidRole(String(decoded.role))) {
+      role = String(decoded.role) as UserRole;
+    }
+
+    return {
+      session: { id: decoded.sessionId },
+      user: { id: decoded.userId, role },
+      role,
+    };
   } catch (error) {
     // If validation fails, session is invalid
     return null;
@@ -200,6 +169,33 @@ function parseCookies(cookieHeader: string): Record<string, string> {
   });
 
   return cookies;
+}
+
+/**
+ * Decode session token (simple JWT-like decode)
+ * Better-auth session tokens are signed JWTs
+ */
+function decodeSessionToken(token: string): { userId: string; sessionId: string; role?: string } | null {
+  try {
+    // Split the JWT token
+    const parts = token.split(".");
+    if (parts.length !== 3) {
+      return null;
+    }
+
+    // Decode the payload (middle part)
+    const payload = JSON.parse(
+      Buffer.from(parts[1], "base64url").toString("utf-8")
+    );
+
+    return {
+      userId: payload.sub || payload.userId || payload.id,
+      sessionId: payload.sessionId || payload.sid || payload.jti,
+      role: payload.role,
+    };
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -234,13 +230,14 @@ export function isPathPublic(pathname: string): boolean {
   const publicPatterns = [
     "/",                    // Home page
     "/login",              // Login page
-    "/register",           // Registration page
     "/api/auth",           // Auth API routes
   ];
 
   // Public patterns that start with a prefix
   const publicPrefixes = [
     "/api/auth/",          // Auth API routes (nested)
+    "/e/",                 // Public event pages
+    "/ticket/",            // Public ticket pages
   ];
 
   // Check exact matches
@@ -250,13 +247,6 @@ export function isPathPublic(pathname: string): boolean {
 
   // Check prefix matches
   if (publicPrefixes.some((prefix) => pathname.startsWith(prefix))) {
-    return true;
-  }
-
-  // Check for public event pages: /events/[slug]
-  // These are dynamic routes that should be public
-  const eventSlugMatch = pathname.match(/^\/events\/[^/]+$/);
-  if (eventSlugMatch) {
     return true;
   }
 
