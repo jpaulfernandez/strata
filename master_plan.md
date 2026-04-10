@@ -136,6 +136,117 @@
   - Dashboard shows live check-in stats with auto-refresh
   - Registrant list with search and status filtering
   - CSV export with dynamic form field columns
+  - **Enhanced dashboard** (2026-04-10): Now shows both "Recent Check-ins" (max 5) and "Not Checked In" sections for better event management
+  - Fixed typo in edit event URL (extra `}` character)
+
+---
+
+## Bug Fixes & Enhancements (Post-Wave 7)
+
+### 2026-04-10 Session
+
+**Bugs Resolved:**
+- BUG-020: QR code not centered on thank-you page (fixed flex centering)
+- BUG-021: QR scanner showing "not recognized" for valid QR codes (URL token extraction)
+- BUG-022: Mobile responsiveness issues on public pages (responsive breakpoints)
+- BUG-023: Edit event URL contained extra brace (typo fix)
+- BUG-024: Ticket page authentication error (added public `getEventById` function)
+
+**Enhancements:**
+- FEATURE-001: Dashboard now shows pending registrants (not checked in) alongside recent check-ins
+- Mobile-responsive design for registration, thank-you, and ticket pages
+- QR scanner extracts token from URL path for reliable check-ins
+
+**Files Modified:**
+- `app/scan/[id]/page.tsx` - Token extraction from URL
+- `app/e/[slug]/thanks/page.tsx` - QR centering, mobile responsive
+- `app/e/[slug]/page.tsx` - Mobile responsive
+- `app/ticket/[qrToken]/page.tsx` - Mobile responsive, public event fetching
+- `app/admin/dashboard/[id]/page.tsx` - URL fix, pending registrants feature
+- `server/actions/events.ts` - Added public `getEventById` function
+
+---
+
+## Feature Wave: Email Templates, Calendar, Reports (2026-04-10)
+
+**Status**: Complete
+**Last updated**: 2026-04-10
+
+**Features Implemented:**
+1. **Customizable Email Templates**
+   - Default email template editable in General Settings
+   - Per-event template override capability
+   - Template variables: `{{firstName}}`, `{{lastName}}`, `{{fullName}}`, `{{email}}`, `{{eventName}}`, `{{eventDate}}`, `{{eventTime}}`, `{{eventLocation}}`, `{{ticketUrl}}`, `{{eventSlug}}`
+   - HTML support in templates
+
+2. **Calendar Integration**
+   - "Add to Calendar" buttons on ticket page
+   - Google Calendar support (opens pre-filled event)
+   - Outlook Calendar support
+   - Apple Calendar / generic ICS download
+
+3. **Events Report**
+   - Export all registrants across all events in single CSV
+   - Includes Event Name column for identification
+   - Accessible from General Settings page
+
+**Files Created:**
+- `lib/calendar.ts` - Calendar URL/ICS generation utilities
+- `components/features/calendar-buttons.tsx` - Calendar button component
+
+**Files Modified:**
+- `lib/db/schema.ts` - Added `defaultEmailTemplate` and `emailTemplate` fields
+- `server/actions/settings.ts` - Email template CRUD functions
+- `server/actions/export.ts` - Added `exportAllRegistrantsCsv()`
+- `server/email/index.ts` - Template support with variable substitution
+- `server/actions/registrants.ts` - Pass template to email function
+- `app/admin/settings/general/page.tsx` - Template editor and export button
+- `app/ticket/[qrToken]/page.tsx` - Calendar buttons
+
+---
+
+## Session: UX Improvements (2026-04-10)
+
+**Status**: Complete
+**Last updated**: 2026-04-10
+
+**Features Implemented:**
+1. **Consolidated Thank You Page into Ticket Page**
+   - Removed redundant thank-you page flow
+   - Registration now redirects directly to `/ticket/{qrToken}?new=true`
+   - Success banner shows "You're Registered!" for new registrations
+   - Ticket page serves as both confirmation and permanent ticket
+
+2. **Download QR Button**
+   - Added "Save QR" button on ticket page
+   - Downloads QR code as PNG file named after registrant
+
+3. **Email Template Tab on Edit Event**
+   - Added third tab "Confirmation Email" to edit event page
+   - Toggle to enable/disable custom email template per event
+   - HTML template editor with variable reference
+   - Falls back to default template from settings when disabled
+
+4. **Fixed Email Sending**
+   - Email sending errors were being swallowed silently
+   - Added proper result checking with `.then()` instead of `.catch()`
+   - Added detailed console logging for success/failure
+   - Added configurable `EMAIL_FROM` environment variable
+   - Defaults to Resend's test address for development
+
+**Files Created:**
+- `components/features/download-qr-button.tsx` - QR download button component
+
+**Files Modified:**
+- `app/e/[slug]/thanks/page.tsx` - Converted to redirect page
+- `app/e/[slug]/registration-form.tsx` - Redirect to ticket page with success flag
+- `app/ticket/[qrToken]/page.tsx` - Added success banner, download button
+- `app/admin/events/[id]/edit/page.tsx` - Added email template tab
+- `lib/validations/events.ts` - Added `emailTemplate` field to schema
+- `server/actions/events.ts` - Handle `emailTemplate` in `updateEvent`
+- `server/actions/registrants.ts` - Proper email result handling
+- `server/email/index.ts` - Configurable from address
+- `.env.example` - Added EMAIL_FROM documentation
 
 ---
 

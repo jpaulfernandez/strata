@@ -100,6 +100,7 @@ This file serves as the source of truth for the Strata codebase. It provides a c
   /permissions.ts       # Permission constants and helpers
   /utils.ts             # General utilities (generateSlug, formatDateTime, zodErrorToFormErrors)
   /qr.ts                # QR code generation
+  /calendar.ts          # Calendar integration (Google, Outlook, ICS generation)
 
 /server                # Server-only code (not exposed to client)
   /auth                # Auth configuration and middleware helpers
@@ -239,6 +240,7 @@ Route protection is enforced in `app/middleware.ts`:
 | `events/event-list.tsx` | Event list with grid/list toggle (persisted to localStorage), search, status filter |
 | `events/form-builder.tsx` | Unified form builder with single-column layout, drag-and-drop for global fields and custom questions using @dnd-kit |
 | `events/form-preview.tsx` | Live preview of registration form as it appears to registrants |
+| `calendar-buttons.tsx` | "Add to Calendar" buttons for Google, Outlook, and Apple/ICS |
 
 ---
 
@@ -302,7 +304,7 @@ The admin layout (`app/admin/layout.tsx`) features:
 | `/signup` | Signup page |
 | `/e/[slug]` | Public event registration form |
 | `/e/[slug]/thanks` | Thank-you page with QR code |
-| `/ticket/[qrToken]` | Shareable ticket page (mobile-friendly) |
+| `/ticket/[qrToken]` | Shareable ticket page (mobile-friendly, includes calendar integration) |
 
 ### Protected Routes (Admin+)
 
@@ -314,7 +316,7 @@ The admin layout (`app/admin/layout.tsx`) features:
 | `/admin/events/[id]/edit` | Edit existing event (tabbed) |
 | `/admin/events/[id]/share` | Share event public link |
 | `/admin/events/[id]/registrants` | Registrant list with CSV export |
-| `/admin/dashboard/[id]` | Live check-in dashboard |
+| `/admin/dashboard/[id]` | Live check-in dashboard with recent check-ins (max 5) and pending registrants list |
 | `/admin/settings` | App settings |
 | `/admin/settings/fields` | Global form fields |
 | `/admin/settings/fields/new` | Create global field |
@@ -339,12 +341,12 @@ The admin layout (`app/admin/layout.tsx`) features:
 
 | File | Purpose |
 |------|---------|
-| `events.ts` | Event CRUD operations (create, update, delete, duplicate, status toggle) |
+| `events.ts` | Event CRUD operations (create, update, delete, duplicate, status toggle). Includes public `getEventById()` and `getEventBySlug()` for pages that don't require auth. |
 | `registrants.ts` | Registration and registrant management (register, get by QR, check duplicate) |
 | `checkin.ts` | Check-in operations (QR scan, manual email, VIP toggle) |
-| `settings.ts` | Manage global settings, global fields, and e-ticket message |
+| `settings.ts` | Manage global settings, global fields, e-ticket message, and default email template |
 | `staff.ts` | Staff CRUD operations |
-| `export.ts` | CSV export functionality |
+| `export.ts` | CSV export functionality (per-event `exportRegistrantsCsv()` and all-events `exportAllRegistrantsCsv()`) |
 
 ### Important: "use server" Constraints
 
@@ -467,6 +469,26 @@ Scanner explicitly requests camera permission before starting:
 await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
 await scannerRef.current.start({ facingMode: "environment" }, { fps: 10 }, ...)
 ```
+
+### QR Code Token Extraction
+
+QR codes encode full URLs (e.g., `http://localhost:3000/ticket/{token}`). The scanner extracts the token from the URL path before database lookup:
+
+```tsx
+// Extract token from URL or use raw text
+let qrToken = decodedText
+try {
+  const url = new URL(decodedText)
+  const pathParts = url.pathname.split('/')
+  if (pathParts[1] === 'ticket' && pathParts[2]) {
+    qrToken = pathParts[2]
+  }
+} catch {
+  // Not a URL, treat as raw token
+}
+```
+
+This allows the scanner to work with both full URLs and raw tokens (backward compatible).
 
 ---
 

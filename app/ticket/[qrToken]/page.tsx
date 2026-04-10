@@ -4,9 +4,13 @@ import { getRegistrantByQrToken } from "@/server/actions/registrants"
 import { getEventById } from "@/server/actions/events"
 import { getTicketMessage } from "@/server/actions/settings"
 import { generateQRCode } from "@/lib/qr"
+import { CalendarButtons } from "@/components/features/calendar-buttons"
+import { DownloadQrButton } from "@/components/features/download-qr-button"
+import type { CalendarEventData } from "@/lib/calendar"
 
 interface TicketPageProps {
   params: { qrToken: string }
+  searchParams: { new?: string }
 }
 
 export async function generateMetadata({ params }: TicketPageProps): Promise<Metadata> {
@@ -21,8 +25,9 @@ export async function generateMetadata({ params }: TicketPageProps): Promise<Met
   }
 }
 
-export default async function TicketPage({ params }: TicketPageProps) {
+export default async function TicketPage({ params, searchParams }: TicketPageProps) {
   const qrToken = params.qrToken
+  const isNewRegistration = searchParams.new === "true"
 
   // Get registrant
   const registrant = await getRegistrantByQrToken(qrToken)
@@ -55,9 +60,35 @@ export default async function TicketPage({ params }: TicketPageProps) {
 
   const initials = `${registrant.firstName[0]}${registrant.lastName[0]}`.toUpperCase()
 
+  // Prepare calendar event data
+  const calendarEvent: CalendarEventData = {
+    title: event.title,
+    description: event.description,
+    location: event.location,
+    eventDate: event.eventDate,
+    startTime: event.startTime,
+    endTime: event.endTime,
+    slug: event.slug,
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+
   return (
     <div className="min-h-screen bg-[var(--surface)]">
       <div className="max-w-sm mx-auto px-4 py-6 sm:py-8">
+        {/* Success Banner for New Registrations */}
+        {isNewRegistration && (
+          <div className="mb-6 p-4 rounded-[1.5rem] bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 text-center">
+            <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-green-100 flex items-center justify-center">
+              <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-lg font-headline font-bold text-green-800">You&apos;re Registered!</h2>
+            <p className="text-sm text-green-700 mt-1">Your ticket has been sent to <strong>{registrant.email}</strong></p>
+          </div>
+        )}
+
         {/* Ticket Card */}
         <div className="rounded-[1.5rem] sm:rounded-[2rem] bg-[var(--surface-container-lowest)] shadow-[0_12px_40px_rgba(74,69,75,0.06)] overflow-hidden border border-[var(--outline-variant)]/15">
           {/* Header */}
@@ -79,6 +110,17 @@ export default async function TicketPage({ params }: TicketPageProps) {
             <p className="text-xs text-[var(--on-surface-variant)] mt-3 sm:mt-4 font-label uppercase tracking-wider text-center">
               Scan this code at check-in
             </p>
+          </div>
+
+          {/* Actions: Save QR + Add to Calendar */}
+          <div className="px-4 sm:px-6 pb-4 sm:pb-6">
+            <div className="flex flex-wrap gap-2 justify-center mb-4">
+              <DownloadQrButton qrCodeDataUrl={qrCodeDataUrl} registrantName={`${registrant.firstName} ${registrant.lastName}`} />
+            </div>
+            <p className="text-xs text-center text-[var(--on-surface-variant)] mb-3 font-label uppercase tracking-wider">
+              Add to Calendar
+            </p>
+            <CalendarButtons event={calendarEvent} appUrl={appUrl} />
           </div>
 
           {/* Divider */}

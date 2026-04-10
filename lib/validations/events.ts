@@ -74,6 +74,7 @@ export const eventDetailsSchema = z.object({
   status: z.enum(["draft", "open", "closed", "ended"]).optional(),
   formFields: z.array(formFieldConfigSchema).optional(),
   customQuestions: z.array(customQuestionSchema).optional(),
+  emailTemplate: z.string().max(10000, "Email template too long").optional().nullable(),
 });
 
 export type EventDetailsInput = z.infer<typeof eventDetailsSchema>;

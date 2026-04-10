@@ -108,6 +108,7 @@ export const events = pgTable("events", {
   status: eventStatusEnum("status").default("draft").notNull(),
   formFields: jsonb("form_fields").$type<FormFieldConfig[]>(),
   customQuestions: jsonb("custom_questions").$type<CustomQuestion[]>(),
+  emailTemplate: text("email_template"), // Custom email template (overrides default)
   createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -166,6 +167,7 @@ export const globalFields = pgTable("global_fields", {
 export const globalSettings = pgTable("global_settings", {
   id: text("id").primaryKey().default("default"),
   ticketMessage: text("ticket_message").default("Save or screenshot this QR code to check in at the event."),
+  defaultEmailTemplate: text("default_email_template"), // HTML template for confirmation emails
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
 });

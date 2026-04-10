@@ -162,8 +162,8 @@ export function RegistrationForm({ event }: RegistrationFormProps) {
       })
 
       if (result.success && result.qrToken) {
-        // Navigate to thank-you page
-        router.push(`/e/${event.slug}/thanks?token=${result.qrToken}`)
+        // Navigate directly to ticket page with success indicator
+        router.push(`/ticket/${result.qrToken}?new=true`)
       } else {
         setErrors({ form: result.error || "Registration failed. Please try again." })
       }

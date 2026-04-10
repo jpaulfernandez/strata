@@ -3,10 +3,10 @@
 import { useState, useCallback, useRef, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, FileText, Settings, AlertCircle, Check, X, Eye, Rocket, ExternalLink } from "lucide-react"
+import { ArrowLeft, FileText, Settings, AlertCircle, Check, X, Eye, Rocket, ExternalLink, Mail } from "lucide-react"
 import { Button, Input, Textarea, Label, Card, Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui"
 import { getEvent, updateEvent, getRegistrantCount } from "@/server/actions/events"
-import { getGlobalFields } from "@/server/actions/settings"
+import { getGlobalFields, getDefaultEmailTemplate } from "@/server/actions/settings"
 import { eventDetailsSchema, type EventDetailsInput } from "@/lib/validations/events"
 import { zodErrorToFormErrors, generateSlug, formatDateTime } from "@/lib/utils"
 import { FormBuilder } from "@/components/features/events/form-builder"
@@ -117,7 +117,12 @@ export default function EditEventPage() {
   const [registrantCount, setRegistrantCount] = useState<number>(0)
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<"details" | "form">("details")
+  const [activeTab, setActiveTab] = useState<"details" | "form" | "email">("details")
+
+  // Email template state
+  const [emailTemplate, setEmailTemplate] = useState("")
+  const [useCustomEmail, setUseCustomEmail] = useState(false)
+  const [defaultEmailTemplate, setDefaultEmailTemplate] = useState("")
 
   // Form builder state
   const [globalFields, setGlobalFields] = useState<GlobalField[]>([])
@@ -148,8 +153,10 @@ export default function EditEventPage() {
       status: selectedStatus,
       formFields,
       customQuestions,
+      emailTemplate: useCustomEmail ? emailTemplate : "",
+      useCustomEmail,
     })
-  }, [title, slug, description, location, eventDate, startTime, endTime, mapsLink, coverImageUrl, selectedStatus, formFields, customQuestions])
+  }, [title, slug, description, location, eventDate, startTime, endTime, mapsLink, coverImageUrl, selectedStatus, formFields, customQuestions, emailTemplate, useCustomEmail])
 
   // Check for unsaved changes
   const hasUnsavedChanges = useCallback(() => {
@@ -175,10 +182,11 @@ export default function EditEventPage() {
     async function loadData() {
       setIsLoading(true)
       try {
-        // Load event and global fields in parallel
-        const [event, fields] = await Promise.all([
+        // Load event, global fields, and default email template in parallel
+        const [event, fields, defaultTemplate] = await Promise.all([
           getEvent(eventId),
           getGlobalFields(),
+          getDefaultEmailTemplate(),
         ])
 
         if (!event) {
@@ -223,6 +231,13 @@ export default function EditEventPage() {
           setCustomQuestions(loadedCustomQuestions)
         }
 
+        // Load email template
+        setDefaultEmailTemplate(defaultTemplate || "")
+        if (event.emailTemplate) {
+          setEmailTemplate(event.emailTemplate)
+          setUseCustomEmail(true)
+        }
+
         // Set initial values for change tracking - use a timeout to ensure all state updates are complete
         setTimeout(() => {
           const initialState = JSON.stringify({
@@ -238,6 +253,8 @@ export default function EditEventPage() {
             status: event.status,
             formFields: loadedFormFields,
             customQuestions: loadedCustomQuestions,
+            emailTemplate: event.emailTemplate || "",
+            useCustomEmail: !!event.emailTemplate,
           })
           setInitialValues(initialState)
           setIsInitialLoadComplete(true)
@@ -362,6 +379,9 @@ export default function EditEventPage() {
       status,
       formFields: formFields.length > 0 ? formFields : undefined,
       customQuestions: customQuestions.length > 0 ? customQuestions : undefined,
+      // If useCustomEmail is false, set to null to clear the stored template
+      // If true and has content, set the template; if true but empty, set null
+      emailTemplate: useCustomEmail && emailTemplate.trim() ? emailTemplate.trim() : null,
     }
 
     // Validate with Zod
@@ -472,6 +492,12 @@ export default function EditEventPage() {
             onClick={() => setActiveTab("form")}
             icon={<FileText className="w-4 h-4" />}
             label="Registration Form"
+          />
+          <TabButton
+            active={activeTab === "email"}
+            onClick={() => setActiveTab("email")}
+            icon={<Mail className="w-4 h-4" />}
+            label="Confirmation Email"
           />
         </div>
 
@@ -729,6 +755,105 @@ export default function EditEventPage() {
                   </Card>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Email Template Tab */}
+          {activeTab === "email" && (
+            <div className="space-y-6">
+              <Card>
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-[var(--primary-container)]/30 flex items-center justify-center shrink-0">
+                    <Mail className="w-6 h-6 text-[var(--primary)]" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-[var(--on-surface)]">Confirmation Email</h2>
+                    <p className="text-sm text-[var(--on-surface-variant)]">
+                      Customize the email sent to registrants after they sign up. Leave empty to use the default template from settings.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Toggle for custom template */}
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="useCustomEmail"
+                      checked={useCustomEmail}
+                      onChange={(e) => {
+                        setUseCustomEmail(e.target.checked)
+                        if (!e.target.checked) {
+                          setEmailTemplate("")
+                        }
+                      }}
+                      className="w-5 h-5 rounded accent-[var(--primary)]"
+                    />
+                    <label htmlFor="useCustomEmail" className="text-sm font-medium text-[var(--on-surface)]">
+                      Use custom email template for this event
+                    </label>
+                  </div>
+
+                  {useCustomEmail && (
+                    <>
+                      <div>
+                        <Label htmlFor="emailTemplate">Email Template (HTML)</Label>
+                        <textarea
+                          id="emailTemplate"
+                          value={emailTemplate}
+                          onChange={(e) => setEmailTemplate(e.target.value)}
+                          rows={12}
+                          placeholder="<h1>You're Registered!</h1>&#10;<p>Hi {{firstName}},</p>&#10;<p>Your ticket for {{eventName}} is confirmed!</p>&#10;<p><a href=&quot;{{ticketUrl}}&quot;>View Your Ticket</a></p>"
+                          className="w-full px-4 py-3 rounded-xl bg-[var(--surface-container-low)] border border-[var(--outline-variant)]/20 text-[var(--on-surface)] placeholder:text-[var(--on-surface-variant)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--primary-container)] transition-all resize-none font-mono text-sm"
+                        />
+                      </div>
+
+                      {/* Available Variables */}
+                      <div className="p-4 rounded-xl bg-[var(--surface-container-low)]">
+                        <p className="text-xs font-label font-semibold uppercase tracking-widest text-[var(--on-surface-variant)] mb-2">
+                          Available Variables
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {["firstName", "lastName", "fullName", "email", "eventName", "eventDate", "eventTime", "eventLocation", "ticketUrl", "eventSlug"].map((v) => (
+                            <code key={v} className="px-2 py-1 rounded bg-[var(--surface-container)] text-xs text-[var(--on-surface)]">
+                              {`{{${v}}}`}
+                            </code>
+                          ))}
+                        </div>
+                        <p className="text-xs text-[var(--on-surface-variant)] mt-3">
+                          The QR code will be automatically embedded in emails. Use <code className="px-1 rounded bg-[var(--surface-container)]">{`{{ticketUrl}}`}</code> to link to the ticket page.
+                        </p>
+                      </div>
+                    </>
+                  )}
+
+                  {!useCustomEmail && defaultEmailTemplate && (
+                    <div className="p-4 rounded-xl bg-[var(--surface-container-low)]">
+                      <p className="text-xs font-label font-semibold uppercase tracking-widest text-[var(--on-surface-variant)] mb-2">
+                        Using Default Template from Settings
+                      </p>
+                      <p className="text-sm text-[var(--on-surface-variant)]">
+                        Enable custom template above to override. The default template can be changed in{" "}
+                        <Link href="/admin/settings/general" className="text-[var(--primary)] hover:underline">
+                          General Settings
+                        </Link>.
+                      </p>
+                    </div>
+                  )}
+
+                  {!useCustomEmail && !defaultEmailTemplate && (
+                    <div className="p-4 rounded-xl bg-[var(--surface-container-low)]">
+                      <p className="text-sm text-[var(--on-surface-variant)]">
+                        Using built-in default template. You can customize it in{" "}
+                        <Link href="/admin/settings/general" className="text-[var(--primary)] hover:underline">
+                          General Settings
+                        </Link>{" "}
+                        or enable custom template above.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </Card>
             </div>
           )}
         </form>

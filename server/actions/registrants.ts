@@ -7,6 +7,7 @@ import { registrationSchema, type RegistrationInput } from "@/lib/validations/re
 import { z } from "zod"
 import { randomUUID } from "crypto"
 import { sendConfirmationEmail } from "@/server/email"
+import { getDefaultEmailTemplate } from "@/server/actions/settings"
 
 /**
  * Register a new attendee for an event (public - no auth required)
@@ -57,7 +58,11 @@ export async function registerForEvent(
       })
       .returning()
 
-    // Send confirmation email (non-blocking, don't fail registration if email fails)
+    // Send confirmation email (non-blocking, but properly handle errors)
+    // Get email template: event-specific or default
+    const emailTemplate = event.emailTemplate ?? await getDefaultEmailTemplate()
+
+    // Await the email result to properly log any errors
     sendConfirmationEmail(
       {
         firstName: registrant.firstName,
@@ -70,9 +75,19 @@ export async function registerForEvent(
         eventDate: event.eventDate,
         location: event.location,
         slug: event.slug,
+        startTime: event.startTime,
+        endTime: event.endTime,
+        description: event.description,
+      },
+      emailTemplate
+    ).then((result) => {
+      if (!result.success) {
+        console.error("Email sending failed:", result.error)
+      } else {
+        console.log("Confirmation email sent successfully to:", registrant.email)
       }
-    ).catch((error) => {
-      console.error("Failed to send confirmation email:", error)
+    }).catch((error) => {
+      console.error("Failed to send confirmation email (unexpected error):", error)
     })
 
     return { success: true, qrToken: registrant.qrToken, registrant }

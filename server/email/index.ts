@@ -8,6 +8,20 @@ import { generateQRCode } from "@/lib/qr"
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 /**
+ * Get the from address for emails
+ * Uses EMAIL_FROM environment variable, or defaults to onboarding@resend.dev for testing
+ */
+function getFromAddress(): string {
+  const emailFrom = process.env.EMAIL_FROM
+  if (emailFrom) {
+    return emailFrom
+  }
+  // Default to Resend's test address for development
+  // This only works in development mode with a test API key
+  return "Strata <onboarding@resend.dev>"
+}
+
+/**
  * Registrant information for confirmation email
  */
 interface RegistrantInfo {
@@ -25,6 +39,35 @@ interface EventInfo {
   eventDate: Date | string | null
   location: string | null
   slug: string
+  startTime?: string | null
+  endTime?: string | null
+  description?: string | null
+}
+
+/**
+ * Template variables available for email templates
+ */
+interface TemplateVariables {
+  firstName: string
+  lastName: string
+  fullName: string
+  email: string
+  eventName: string
+  eventDate: string
+  eventTime: string
+  eventLocation: string
+  ticketUrl: string
+  eventSlug: string
+}
+
+/**
+ * Substitute template variables in a string
+ * Supports {{variableName}} syntax
+ */
+function substituteTemplateVars(template: string, vars: TemplateVariables): string {
+  return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+    return String(vars[key as keyof TemplateVariables] ?? match)
+  })
 }
 
 /**
@@ -55,24 +98,16 @@ function formatEventTime(date: Date | string | null): string {
 }
 
 /**
- * Generate HTML email body with embedded QR code
+ * Get default email template HTML
  */
-function generateConfirmationEmailHtml(
-  registrant: RegistrantInfo,
-  event: EventInfo,
-  qrCodeDataUrl: string,
-  ticketUrl: string
-): string {
-  const eventDateFormatted = formatEventDate(event.eventDate)
-  const eventTime = event.eventDate ? formatEventTime(event.eventDate) : null
-
+function getDefaultEmailTemplateHtml(): string {
   return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your Ticket for ${event.title}</title>
+  <title>Your Ticket for {{eventName}}</title>
   <style>
     body {
       margin: 0;
@@ -210,48 +245,43 @@ function generateConfirmationEmailHtml(
       <div class="header">
         <div class="logo">Strata</div>
         <h1 class="title">You're Registered!</h1>
-        <p class="subtitle">Your ticket for ${event.title} is confirmed</p>
+        <p class="subtitle">Your ticket for {{eventName}} is confirmed</p>
       </div>
 
       <div class="event-details">
         <div class="detail-row">
           <span class="detail-label">Event</span>
-          <span class="detail-value">${event.title}</span>
+          <span class="detail-value">{{eventName}}</span>
         </div>
         <div class="detail-row">
           <span class="detail-label">Date</span>
-          <span class="detail-value">${eventDateFormatted}${eventTime ? ` at ${eventTime}` : ""}</span>
+          <span class="detail-value">{{eventDate}}{{eventTime}}</span>
         </div>
-        ${event.location ? `
         <div class="detail-row">
           <span class="detail-label">Location</span>
-          <span class="detail-value">${event.location}</span>
+          <span class="detail-value">{{eventLocation}}</span>
         </div>
-        ` : ""}
       </div>
 
       <div class="qr-section">
-        <div class="qr-code">
-          <img src="${qrCodeDataUrl}" alt="Your ticket QR code" />
-        </div>
         <p class="qr-instructions">Scan this QR code at the venue for quick check-in</p>
       </div>
 
       <div class="divider"></div>
 
       <div class="registrant-info">
-        <p class="registrant-name">${registrant.firstName} ${registrant.lastName}</p>
-        <p class="registrant-email">${registrant.email}</p>
+        <p class="registrant-name">{{fullName}}</p>
+        <p class="registrant-email">{{email}}</p>
       </div>
 
       <div style="text-align: center;">
-        <a href="${ticketUrl}" class="button">View Your Ticket</a>
+        <a href="{{ticketUrl}}" class="button">View Your Ticket</a>
       </div>
 
       <div class="footer">
         <p class="footer-text">Present this QR code at the event entrance.</p>
         <p class="footer-text">
-          Can't make it? <a href="${ticketUrl}" class="footer-link">Manage your registration</a>
+          Can't make it? <a href="{{ticketUrl}}" class="footer-link">Manage your registration</a>
         </p>
       </div>
     </div>
@@ -262,29 +292,23 @@ function generateConfirmationEmailHtml(
 }
 
 /**
- * Generate plain text email body
+ * Get default email template plain text
  */
-function generateConfirmationEmailText(
-  registrant: RegistrantInfo,
-  event: EventInfo,
-  ticketUrl: string
-): string {
-  const eventDateFormatted = formatEventDate(event.eventDate)
-  const eventTime = event.eventDate ? formatEventTime(event.eventDate) : null
-
+function getDefaultEmailTemplateText(): string {
   return `
 You're Registered!
 
-Your ticket for ${event.title} is confirmed.
+Your ticket for {{eventName}} is confirmed.
 
 Event Details:
-- Event: ${event.title}
-- Date: ${eventDateFormatted}${eventTime ? ` at ${eventTime}` : ""}${event.location ? `\n- Location: ${event.location}` : ""}
+- Event: {{eventName}}
+- Date: {{eventDate}}{{eventTime}}
+- Location: {{eventLocation}}
 
-Registrant: ${registrant.firstName} ${registrant.lastName}
-Email: ${registrant.email}
+Registrant: {{fullName}}
+Email: {{email}}
 
-View your ticket and QR code at: ${ticketUrl}
+View your ticket and QR code at: {{ticketUrl}}
 
 Present your QR code at the event entrance for quick check-in.
 
@@ -293,10 +317,98 @@ Thank you for registering!
 }
 
 /**
+ * Build template variables from registrant and event info
+ */
+function buildTemplateVariables(
+  registrant: RegistrantInfo,
+  event: EventInfo,
+  ticketUrl: string
+): TemplateVariables {
+  const eventDateFormatted = formatEventDate(event.eventDate)
+
+  // Build time string
+  let eventTimeFormatted = ""
+  if (event.startTime && event.endTime) {
+    eventTimeFormatted = ` at ${event.startTime} – ${event.endTime}`
+  } else if (event.eventDate) {
+    const timeStr = formatEventTime(event.eventDate)
+    if (timeStr) eventTimeFormatted = ` at ${timeStr}`
+  }
+
+  return {
+    firstName: registrant.firstName,
+    lastName: registrant.lastName,
+    fullName: `${registrant.firstName} ${registrant.lastName}`,
+    email: registrant.email,
+    eventName: event.title,
+    eventDate: eventDateFormatted,
+    eventTime: eventTimeFormatted,
+    eventLocation: event.location || "Location TBA",
+    ticketUrl,
+    eventSlug: event.slug,
+  }
+}
+
+/**
+ * Generate HTML email body with embedded QR code
+ * Uses custom template if provided, otherwise uses default
+ */
+function generateConfirmationEmailHtml(
+  registrant: RegistrantInfo,
+  event: EventInfo,
+  qrCodeDataUrl: string,
+  ticketUrl: string,
+  customTemplate?: string | null
+): string {
+  const vars = buildTemplateVariables(registrant, event, ticketUrl)
+
+  // Use custom template or default
+  let template = customTemplate || getDefaultEmailTemplateHtml()
+
+  // Substitute variables
+  let html = substituteTemplateVars(template, vars)
+
+  // Inject QR code image if there's a placeholder or in default template
+  // The QR code is embedded in the qr-section div
+  if (html.includes("qr-section") && !html.includes("<img")) {
+    html = html.replace(
+      /<div class="qr-section">([\s\S]*?)<\/div>/,
+      `<div class="qr-section">
+        <div class="qr-code">
+          <img src="${qrCodeDataUrl}" alt="Your ticket QR code" />
+        </div>
+        $1
+      </div>`
+    )
+  }
+
+  return html
+}
+
+/**
+ * Generate plain text email body
+ */
+function generateConfirmationEmailText(
+  registrant: RegistrantInfo,
+  event: EventInfo,
+  ticketUrl: string,
+  customTemplate?: string | null
+): string {
+  const vars = buildTemplateVariables(registrant, event, ticketUrl)
+
+  // Use custom template or default
+  let template = customTemplate || getDefaultEmailTemplateText()
+
+  // Substitute variables
+  return substituteTemplateVars(template, vars)
+}
+
+/**
  * Send a confirmation email to a registrant with their ticket QR code
  *
  * @param registrant - The registrant information (firstName, lastName, email, qrToken)
- * @param event - The event information (title, eventDate, location, slug)
+ * @param event - The event information (title, eventDate, location, slug, startTime, endTime)
+ * @param customTemplate - Optional custom HTML template (uses default if not provided)
  * @returns Promise resolving to the result of the email send operation
  *
  * @example
@@ -309,7 +421,8 @@ Thank you for registering!
  */
 export async function sendConfirmationEmail(
   registrant: RegistrantInfo,
-  event: EventInfo
+  event: EventInfo,
+  customTemplate?: string | null
 ): Promise<{ success: boolean; error?: string; data?: unknown }> {
   // Validate required environment variable
   if (!process.env.RESEND_API_KEY) {
@@ -344,13 +457,13 @@ export async function sendConfirmationEmail(
       margin: 2,
     })
 
-    // Generate email content
-    const html = generateConfirmationEmailHtml(registrant, event, qrCodeDataUrl, ticketUrl)
-    const text = generateConfirmationEmailText(registrant, event, ticketUrl)
+    // Generate email content with custom template if provided
+    const html = generateConfirmationEmailHtml(registrant, event, qrCodeDataUrl, ticketUrl, customTemplate)
+    const text = generateConfirmationEmailText(registrant, event, ticketUrl, customTemplate)
 
     // Send the email
     const { data, error } = await resend.emails.send({
-      from: "Strata <noreply@strata.app>",
+      from: getFromAddress(),
       to: registrant.email,
       subject: `Your ticket for ${event.title}`,
       html,

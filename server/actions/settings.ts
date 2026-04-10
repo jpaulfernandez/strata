@@ -153,6 +153,7 @@ export async function getGlobalSettings() {
       return {
         id: "default",
         ticketMessage: DEFAULT_TICKET_MESSAGE,
+        defaultEmailTemplate: null,
         updatedAt: null,
         updatedBy: null,
       }
@@ -164,6 +165,7 @@ export async function getGlobalSettings() {
     return {
       id: "default",
       ticketMessage: DEFAULT_TICKET_MESSAGE,
+      defaultEmailTemplate: null,
       updatedAt: null,
       updatedBy: null,
     }
@@ -192,6 +194,7 @@ export async function getTicketMessage(): Promise<string> {
  */
 export async function updateGlobalSettings(input: {
   ticketMessage?: string
+  defaultEmailTemplate?: string | null
 }) {
   await requireRole("admin")
 
@@ -207,6 +210,7 @@ export async function updateGlobalSettings(input: {
         .update(globalSettings)
         .set({
           ticketMessage: input.ticketMessage,
+          defaultEmailTemplate: input.defaultEmailTemplate ?? null,
           updatedAt: new Date(),
         })
         .where(eq(globalSettings.id, "default"))
@@ -221,6 +225,7 @@ export async function updateGlobalSettings(input: {
         .values({
           id: "default",
           ticketMessage: input.ticketMessage || DEFAULT_TICKET_MESSAGE,
+          defaultEmailTemplate: input.defaultEmailTemplate ?? null,
         })
         .returning()
 
@@ -231,5 +236,22 @@ export async function updateGlobalSettings(input: {
   } catch (error) {
     console.error("Error updating settings:", error)
     return { success: false, error: "Failed to update settings" }
+  }
+}
+
+/**
+ * Get default email template (public for email sending)
+ */
+export async function getDefaultEmailTemplate(): Promise<string | null> {
+  try {
+    const [settings] = await db
+      .select({ defaultEmailTemplate: globalSettings.defaultEmailTemplate })
+      .from(globalSettings)
+      .where(eq(globalSettings.id, "default"))
+      .limit(1)
+
+    return settings?.defaultEmailTemplate ?? null
+  } catch {
+    return null
   }
 }

@@ -373,6 +373,33 @@ When a bug is discovered during development, log it here immediately with:
 
 ---
 
+## FEATURE-002: Customizable Email Templates, Calendar Integration, Events Report
+
+- **Date**: 2026-04-10
+- **Severity**: Enhancement
+- **Status**: Completed
+- **Description**: Three major enhancements:
+  1. **Email Templates**: Allow organizers to customize confirmation emails with default template in settings and per-event overrides
+  2. **Calendar Integration**: Add "Add to Calendar" buttons on ticket page for Google, Outlook, and Apple calendars
+  3. **Events Report**: Export all registrants across all events in a single CSV
+- **Expected behavior**: 
+  - Admins can set a default email template in settings
+  - Each event can override the template
+  - Registrants see calendar buttons on their ticket page
+  - Admins can download a report of all registrants from all events
+- **Root cause**: Missing features
+- **Fix applied**:
+  - Added `defaultEmailTemplate` field to `global_settings` table
+  - Added `emailTemplate` field to `events` table
+  - Created `lib/calendar.ts` with Google Calendar URL, Outlook URL, and ICS file generation
+  - Created `components/features/calendar-buttons.tsx` for ticket page calendar buttons
+  - Added `exportAllRegistrantsCsv()` function to `server/actions/export.ts`
+  - Updated settings page with email template editor and all-events export button
+  - Updated email module to support custom templates with variable substitution
+  - Template variables: `{{firstName}}`, `{{lastName}}`, `{{fullName}}`, `{{email}}`, `{{eventName}}`, `{{eventDate}}`, `{{eventTime}}`, `{{eventLocation}}`, `{{ticketUrl}}`, `{{eventSlug}}`
+
+---
+
 ## BUG-023: Edit Event URL Contains Extra Brace
 
 - **Date**: 2026-04-10
@@ -420,3 +447,60 @@ When a bug is discovered during development, log it here immediately with:
   - Limited recent check-ins to 5 items (was 20)
   - Added scrollable container for pending list
   - Shows celebratory message when all registrants have checked in
+
+---
+
+## FEATURE-003: UX Improvements — Consolidated Ticket Page & Email Template Tab
+
+- **Date**: 2026-04-10
+- **Severity**: Enhancement
+- **Status**: Completed
+- **Description**: UX improvements requested by user:
+  1. Consolidate thank-you page into permanent ticket page (eliminate redundancy)
+  2. Add success banner for new registrations on ticket page
+  3. Add download QR button on ticket page
+  4. Add "Confirmation Email" tab to edit event page for per-event email templates
+  5. Fix email sending issue (emails not received)
+- **Expected behavior**: 
+  - Registration redirects directly to ticket page with success indicator
+  - Ticket page shows "You're Registered!" banner for new registrations
+  - Admin can set custom email template per event
+  - Confirmation emails are successfully sent
+- **Root cause**: Multiple UX and configuration issues:
+  - Thank-you page was redundant with ticket page
+  - Email sending errors were swallowed silently (`.catch()` doesn't catch `{success: false}` returns)
+  - Email from address hardcoded to unverified domain
+- **Fix applied**:
+  - Converted thank-you page to redirect page (`/e/[slug]/thanks` → `/ticket/{qrToken}?new=true`)
+  - Added success banner to ticket page when `new=true` query param present
+  - Added download QR button component
+  - Added "Confirmation Email" tab to edit event page with toggle and template editor
+  - Updated validation schema (`lib/validations/events.ts`) to include `emailTemplate`
+  - Updated `updateEvent` action to save/clear email template
+  - Fixed email sending to properly await and log results
+  - Added configurable `EMAIL_FROM` environment variable (defaults to Resend test address)
+  - Added detailed error logging for email failures
+
+---
+
+## BUG-025: Email Not Sending After Registration
+
+- **Date**: 2026-04-10
+- **Severity**: Critical
+- **Status**: Resolved
+- **Description**: Users did not receive confirmation emails after registering for events. No errors were visible to the user.
+- **Expected behavior**: Confirmation email should be sent successfully to registrant's email address
+- **Steps to reproduce**:
+  1. Register for an event
+  2. Check registrant's email inbox
+  3. No confirmation email received
+- **Root cause**: Multiple issues:
+  1. Email sending code used `.catch()` which only catches promise rejections, not `{success: false}` return values
+  2. Errors like "App URL not configured" or "Email service not configured" were returned as resolved promises and silently swallowed
+  3. Email from address `noreply@strata.app` was not a verified domain in Resend
+- **Fix applied**:
+  - Changed email sending to use `.then()` to properly check `result.success`
+  - Added console logging for both success and failure cases
+  - Added configurable `EMAIL_FROM` environment variable
+  - Default from address is `onboarding@resend.dev` (Resend's test address for development)
+  - Updated `.env.example` with EMAIL_FROM documentation

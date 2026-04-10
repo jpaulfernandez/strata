@@ -6,10 +6,11 @@ import Link from "next/link"
 import { getEvent } from "@/server/actions/events"
 import { getRegistrantsForEvent } from "@/server/actions/registrants"
 import { setEventStatus } from "@/server/actions/events"
+import { exportRegistrantsCsv } from "@/server/actions/export"
 import type { Event, Registrant } from "@/lib/db/schema"
 import { Button, Card, Badge } from "@/components/ui"
 import { cn } from "@/lib/utils"
-import { ArrowLeft, Users, CheckCircle, Clock, TrendingUp, Star, Camera, Loader2, ExternalLink, Copy, Check, Lock, PartyPopper } from "lucide-react"
+import { ArrowLeft, Users, CheckCircle, Clock, TrendingUp, Star, Camera, Loader2, ExternalLink, Copy, Check, Lock, PartyPopper, Download } from "lucide-react"
 
 // Stats card component
 function StatCard({
@@ -159,6 +160,7 @@ export default function DashboardPage() {
   const [error, setError] = React.useState<string | null>(null)
   const [isUpdatingStatus, setIsUpdatingStatus] = React.useState(false)
   const [linkCopied, setLinkCopied] = React.useState(false)
+  const [isExporting, setIsExporting] = React.useState(false)
 
   // Stats
   const stats = React.useMemo(() => {
@@ -270,6 +272,28 @@ export default function DashboardPage() {
     setIsUpdatingStatus(false)
   }
 
+  // Export CSV
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const csv = await exportRegistrantsCsv(eventId)
+
+      // Create download
+      const blob = new Blob([csv], { type: "text/csv" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `${event?.slug || "registrants"}-${new Date().toISOString().split("T")[0]}.csv`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error("Export failed:", err)
+    }
+    setIsExporting(false)
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[var(--surface)] flex items-center justify-center">
@@ -316,6 +340,18 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            <Button
+              variant="secondary"
+              onClick={handleExport}
+              disabled={isExporting || registrants.length === 0}
+            >
+              {isExporting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 mr-2" />
+              )}
+              Export CSV
+            </Button>
             <Link href={`/admin/events/${eventId}/edit`}>
               <Button variant="secondary">
                 Edit Event

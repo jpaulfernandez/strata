@@ -258,6 +258,9 @@ export async function updateEvent(
         ? (validated.customQuestions as CustomQuestion[])
         : null
     }
+    if (validated.emailTemplate !== undefined) {
+      updateData.emailTemplate = validated.emailTemplate ?? null
+    }
 
     const [event] = await db.update(events).set(updateData).where(eq(events.id, id)).returning()
 
