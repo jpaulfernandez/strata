@@ -1,11 +1,13 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { globalFields, type FieldOption } from "@/lib/db/schema"
+import { globalFields, globalSettings, type FieldOption } from "@/lib/db/schema"
 import { eq, desc } from "drizzle-orm"
 import { requireRole } from "@/server/auth/rbac"
 import { revalidatePath } from "next/cache"
 import { globalFieldSchema, type GlobalFieldInput } from "@/lib/validations/settings"
+
+const DEFAULT_TICKET_MESSAGE = "Save or screenshot this QR code to check in at the event."
 
 // Convert string array to FieldOption array
 function toFieldOptions(options: string[] | undefined): FieldOption[] | null {
@@ -129,5 +131,105 @@ export async function deleteGlobalField(id: string) {
     return { success: true }
   } catch (error: any) {
     return { success: false, error: error.message || "Failed to delete field" }
+  }
+}
+
+// =============================================================================
+// Global Settings
+// =============================================================================
+
+/**
+ * Get global settings
+ */
+export async function getGlobalSettings() {
+  try {
+    const [settings] = await db
+      .select()
+      .from(globalSettings)
+      .where(eq(globalSettings.id, "default"))
+      .limit(1)
+
+    if (!settings) {
+      return {
+        id: "default",
+        ticketMessage: DEFAULT_TICKET_MESSAGE,
+        updatedAt: null,
+        updatedBy: null,
+      }
+    }
+
+    return settings
+  } catch (error) {
+    console.error("Error fetching settings:", error)
+    return {
+      id: "default",
+      ticketMessage: DEFAULT_TICKET_MESSAGE,
+      updatedAt: null,
+      updatedBy: null,
+    }
+  }
+}
+
+/**
+ * Get ticket message (public, no auth required)
+ */
+export async function getTicketMessage(): Promise<string> {
+  try {
+    const [settings] = await db
+      .select({ ticketMessage: globalSettings.ticketMessage })
+      .from(globalSettings)
+      .where(eq(globalSettings.id, "default"))
+      .limit(1)
+
+    return settings?.ticketMessage || DEFAULT_TICKET_MESSAGE
+  } catch {
+    return DEFAULT_TICKET_MESSAGE
+  }
+}
+
+/**
+ * Update global settings
+ */
+export async function updateGlobalSettings(input: {
+  ticketMessage?: string
+}) {
+  await requireRole("admin")
+
+  try {
+    const [existing] = await db
+      .select()
+      .from(globalSettings)
+      .where(eq(globalSettings.id, "default"))
+      .limit(1)
+
+    if (existing) {
+      const [updated] = await db
+        .update(globalSettings)
+        .set({
+          ticketMessage: input.ticketMessage,
+          updatedAt: new Date(),
+        })
+        .where(eq(globalSettings.id, "default"))
+        .returning()
+
+      revalidatePath("/admin/settings")
+      revalidatePath("/ticket")
+      return { success: true, settings: updated }
+    } else {
+      const [created] = await db
+        .insert(globalSettings)
+        .values({
+          id: "default",
+          ticketMessage: input.ticketMessage || DEFAULT_TICKET_MESSAGE,
+        })
+        .returning()
+
+      revalidatePath("/admin/settings")
+      revalidatePath("/ticket")
+      return { success: true, settings: created }
+    }
+  } catch (error) {
+    console.error("Error updating settings:", error)
+    return { success: false, error: "Failed to update settings" }
   }
 }

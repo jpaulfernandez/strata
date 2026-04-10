@@ -31,6 +31,7 @@ export const routeAccessConfig: Record<string, RouteAccessLevel> = {
   // Staff routes - staff and above
   "/staff": "staff",
   "/my-events": "staff",
+  "/scan": "staff",
 
   // Admin routes - admin and above
   "/admin": "admin",
@@ -67,6 +68,9 @@ export function getRequiredAccessLevel(pathname: string): RouteAccessLevel {
   }
   if (pathname.startsWith("/super-admin")) {
     return "super_admin";
+  }
+  if (pathname.startsWith("/scan")) {
+    return "staff";
   }
 
   // Default: authenticated users only

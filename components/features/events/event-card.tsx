@@ -180,7 +180,7 @@ export function EventCard({
               </Button>
             </Link>
 
-            <Link href={`/admin/scan/${event.id}`}>
+            <Link href={`/scan/${event.id}`}>
               <Button variant="ghost" size="sm" className="gap-1.5">
                 <ScanLine className="h-3.5 w-3.5" />
                 Scanner

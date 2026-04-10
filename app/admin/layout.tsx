@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Settings, Calendar, LogOut, FileText, Users } from "lucide-react"
+import { Settings, Calendar, LogOut, FileText, Users, Sliders } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const adminNavItems = [
@@ -16,6 +16,7 @@ const adminNavItems = [
     href: "/admin/settings",
     icon: Settings,
     subItems: [
+      { title: "General", href: "/admin/settings/general", icon: Sliders },
       { title: "Fields", href: "/admin/settings/fields", icon: FileText },
       { title: "Staff", href: "/admin/settings/staff", icon: Users },
     ],

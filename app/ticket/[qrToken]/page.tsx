@@ -2,6 +2,7 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getRegistrantByQrToken } from "@/server/actions/registrants"
 import { getEvent } from "@/server/actions/events"
+import { getTicketMessage } from "@/server/actions/settings"
 import { generateQRCode } from "@/lib/qr"
 
 interface TicketPageProps {
@@ -35,6 +36,9 @@ export default async function TicketPage({ params }: TicketPageProps) {
     notFound()
   }
 
+  // Get ticket message from settings
+  const ticketMessage = await getTicketMessage()
+
   // Generate QR code
   const ticketUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/ticket/${registrant.qrToken}`
   const qrCodeDataUrl = await generateQRCode(ticketUrl, { width: 200, margin: 1 })
@@ -63,8 +67,8 @@ export default async function TicketPage({ params }: TicketPageProps) {
           </div>
 
           {/* QR Code */}
-          <div className="p-6 text-center">
-            <div className="inline-block p-4 rounded-2xl bg-white shadow-inner">
+          <div className="p-6 flex flex-col items-center">
+            <div className="p-4 rounded-2xl bg-white shadow-inner">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={qrCodeDataUrl}
@@ -72,7 +76,7 @@ export default async function TicketPage({ params }: TicketPageProps) {
                 className="w-48 h-48"
               />
             </div>
-            <p className="text-xs text-[var(--on-surface-variant)] mt-4 font-label uppercase tracking-wider">
+            <p className="text-xs text-[var(--on-surface-variant)] mt-4 font-label uppercase tracking-wider text-center">
               Scan this code at check-in
             </p>
           </div>
@@ -166,7 +170,7 @@ export default async function TicketPage({ params }: TicketPageProps) {
 
         {/* Instructions */}
         <p className="text-center text-xs text-[var(--on-surface-variant)] mt-6 px-4 leading-relaxed">
-          Present this QR code to staff at the event entrance. You can screenshot this page or save the URL.
+          {ticketMessage}
         </p>
       </div>
     </div>

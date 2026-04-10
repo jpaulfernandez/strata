@@ -65,22 +65,23 @@ const statusLabels: Record<string, string> = {
 const VIEW_MODE_KEY = "strata-events-view-mode"
 
 export function EventList({ initialEvents }: EventListProps) {
-  const [viewMode, setViewMode] = React.useState<ViewMode>(() => {
-    // Initialize from localStorage if available
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(VIEW_MODE_KEY)
-      if (saved === "grid" || saved === "list") {
-        return saved
-      }
-    }
-    return "grid"
-  })
+  const [mounted, setMounted] = React.useState(false)
+  const [viewMode, setViewMode] = React.useState<ViewMode>("grid")
   const [searchQuery, setSearchQuery] = React.useState("")
   const [statusFilter, setStatusFilter] = React.useState<StatusFilter>("all")
   const [events, setEvents] = React.useState<Event[]>(initialEvents)
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
   const [eventToDelete, setEventToDelete] = React.useState<Event | null>(null)
   const [isDeleting, setIsDeleting] = React.useState(false)
+
+  // Read view mode from localStorage after mount
+  React.useEffect(() => {
+    const saved = localStorage.getItem(VIEW_MODE_KEY)
+    if (saved === "grid" || saved === "list") {
+      setViewMode(saved)
+    }
+    setMounted(true)
+  }, [])
 
   // Save view mode to localStorage
   const handleViewModeChange = React.useCallback((mode: ViewMode) => {
@@ -203,7 +204,7 @@ export function EventList({ initialEvents }: EventListProps) {
         {/* View Toggle */}
         <div className="flex items-center gap-1 bg-[var(--surface-container-low)] rounded-full p-1">
           <Button
-            variant={viewMode === "grid" ? "primary" : "ghost"}
+            variant={mounted && viewMode === "grid" ? "primary" : "ghost"}
             size="sm"
             onClick={() => handleViewModeChange("grid")}
             className="gap-1.5"
@@ -212,7 +213,7 @@ export function EventList({ initialEvents }: EventListProps) {
             Grid
           </Button>
           <Button
-            variant={viewMode === "list" ? "primary" : "ghost"}
+            variant={mounted && viewMode === "list" ? "primary" : "ghost"}
             size="sm"
             onClick={() => handleViewModeChange("list")}
             className="gap-1.5"
@@ -230,7 +231,7 @@ export function EventList({ initialEvents }: EventListProps) {
       </p>
 
       {/* Grid View */}
-      {viewMode === "grid" && (
+      {(!mounted || viewMode === "grid") && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEvents.map((event) => (
             <EventCard
@@ -245,7 +246,7 @@ export function EventList({ initialEvents }: EventListProps) {
       )}
 
       {/* List View */}
-      {viewMode === "list" && (
+      {mounted && viewMode === "list" && (
         <div className="rounded-[1.5rem] overflow-hidden bg-[var(--surface-container-lowest)] shadow-[var(--shadow-ghost)]">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -449,7 +450,7 @@ function EventListRow({
               <LayoutDashboard className="h-4 w-4" />
             </Button>
           </Link>
-          <Link href={`/admin/scan/${event.id}`}>
+          <Link href={`/scan/${event.id}`}>
             <Button variant="ghost" size="sm" title="Scanner">
               <ScanLine className="h-4 w-4" />
             </Button>

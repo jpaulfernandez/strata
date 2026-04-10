@@ -59,6 +59,7 @@ const protectedPatterns = [
   "/api/dashboard",
   "/checkin",
   "/api/checkin",
+  "/scan",
   "/my-events",
   "/super-admin",
   "/api/super-admin",

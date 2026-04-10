@@ -57,7 +57,7 @@ async function runMigration() {
 
     console.log("Creating enums...");
     await sql`CREATE TYPE user_role AS ENUM ('super_admin', 'admin', 'staff')`;
-    await sql`CREATE TYPE event_status AS ENUM ('draft', 'open', 'closed')`;
+    await sql`CREATE TYPE event_status AS ENUM ('draft', 'open', 'closed', 'ended')`;
     await sql`CREATE TYPE checkin_method AS ENUM ('qr', 'manual_email')`;
     await sql`CREATE TYPE field_type AS ENUM ('short_text', 'long_text', 'dropdown', 'multiple_choice', 'checkboxes')`;
 
@@ -198,6 +198,16 @@ async function runMigration() {
         is_required BOOLEAN DEFAULT FALSE NOT NULL,
         created_by TEXT REFERENCES "user"(id) ON DELETE SET NULL,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+      )
+    `;
+
+    // Global Settings table
+    await sql`
+      CREATE TABLE global_settings (
+        id TEXT PRIMARY KEY DEFAULT 'default',
+        ticket_message TEXT DEFAULT 'Save or screenshot this QR code to check in at the event.',
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+        updated_by TEXT REFERENCES "user"(id) ON DELETE SET NULL
       )
     `;
 

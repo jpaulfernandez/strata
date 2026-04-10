@@ -162,6 +162,14 @@ export const globalFields = pgTable("global_fields", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+// Global Settings table
+export const globalSettings = pgTable("global_settings", {
+  id: text("id").primaryKey().default("default"),
+  ticketMessage: text("ticket_message").default("Save or screenshot this QR code to check in at the event."),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+});
+
 // Type definitions for JSONB fields
 export interface FieldOption {
   label: string;
@@ -203,6 +211,8 @@ export type VipNotification = typeof vipNotifications.$inferSelect;
 export type NewVipNotification = typeof vipNotifications.$inferInsert;
 export type GlobalField = typeof globalFields.$inferSelect;
 export type NewGlobalField = typeof globalFields.$inferInsert;
+export type GlobalSettings = typeof globalSettings.$inferSelect;
+export type NewGlobalSettings = typeof globalSettings.$inferInsert;
 
 // Indexes for events table
 // export const eventsSlugIdx = index("events_slug_idx").on(events.slug);

@@ -266,7 +266,7 @@ export default function DashboardPage() {
               </Button>
             </Link>
             {!event.status.match("ended") && (
-              <Link href={`/admin/scan/${eventId}`}>
+              <Link href={`/scan/${eventId}`}>
                 <Button>
                   <Camera className="w-4 h-4 mr-2" />
                   Open Scanner
