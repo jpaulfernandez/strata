@@ -50,6 +50,20 @@ export async function getEvent(id: string): Promise<Event | null> {
 }
 
 /**
+ * Get an event by ID for public pages (no auth required)
+ * Used by ticket page and other public routes
+ */
+export async function getEventById(id: string): Promise<Event | null> {
+  try {
+    const [event] = await db.select().from(events).where(eq(events.id, id)).limit(1)
+    return event ?? null
+  } catch (error) {
+    console.error("Error fetching event by ID:", error)
+    return null
+  }
+}
+
+/**
  * Get registrant count for an event (requires admin role)
  */
 export async function getRegistrantCount(eventId: string): Promise<number> {

@@ -1,6 +1,6 @@
-# EventFlow — Master Implementation Plan
+# Strata — Master Implementation Plan
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Last Updated:** 2026-04-10  
 **Spec Reference:** `../eventflow-spec.md`
 
@@ -47,7 +47,9 @@
   - [x] Task 3.6: Invite Staff Form (stub)
   - [x] Task 3.7: Edit User Role Action
   - [x] Task 3.8: Remove Staff Account Action
-- **Notes**: All settings pages implemented as client components for runtime data loading. UI components built following DESIGN.md tokens.
+- **Notes**: 
+    - Settings pages implemented as client components for runtime data loading. UI components built following DESIGN.md tokens.
+    - **General Settings page** added for editing e-ticket message (default: "Save or screenshot this QR code to check in at the event.")
 
 ---
 
@@ -115,6 +117,8 @@
   - Full-screen success/already-checked-in/not-found overlays
   - Manual check-in by email with modal
   - VIP toggle from scanner overlay
+  - **Mobile-optimized scanner** at `/scan/[id]` with fullscreen camera view, bottom navigation (Scanner, History, Stats, Manual), and slide-up attendee profile panel. Bypasses admin layout for pure mobile experience.
+  - **Mobile-optimized scanner** at `/scan/[id]` with fullscreen camera, bottom navigation (Scanner, History, Stats, Manual), and slide-up attendee panel
 
 ---
 
@@ -137,9 +141,9 @@
 
 ## Executive Summary
 
-EventFlow is an event registration and check-in platform with three user-facing surfaces:
+Strata is an event registration and check-in platform with three user-facing surfaces:
 1. **Admin portal** — Event management, settings, live dashboard
-2. **Staff portal** — QR scanner, manual check-in
+2. **Staff portal** — QR scanner (mobile-optimized at `/scan/[id]`), manual check-in
 3. **Public pages** — Registration form, ticket page
 
 This plan organizes 46 tasks across 8 epics into a dependency-aware execution schedule optimized for parallel development.
@@ -324,6 +328,7 @@ Legend: [Epic.Task] → indicates "blocks"
 - Admins can create reusable form fields
 - Staff accounts can be managed
 - Foundation for event form builder complete
+- **General Settings** page for e-ticket message customization
 
 **Unlocks:** Wave 4 (Event Form Builder depends on global fields)
 
@@ -508,6 +513,7 @@ For parallel agent execution:
 | 3 | 3.6 | Invite Staff | M | 3.5, 2.1 | Full-stack |
 | 3 | 3.7 | Role Edit | S | 3.5 | Backend |
 | 3 | 3.8 | Remove Staff | S | 3.5 | Backend |
+| 3 | 3.9 | General Settings | S | 3.1 | Full-stack |
 | 4 | 4.1 | Event List | M | 2.3 | Frontend |
 | 4 | 4.2 | Create Event | L | 4.1 | Full-stack |
 | 4 | 4.3 | Edit Event | M | 4.2 | Full-stack |
@@ -597,4 +603,4 @@ A task is considered complete when:
 
 ---
 
-*This plan is derived from the EventFlow v1.0 spec. Changes to scope should be reflected here before implementation begins.*
+*This plan is derived from the Strata v1.0 spec. Changes to scope should be reflected here before implementation begins.*

@@ -449,8 +449,24 @@ export default function ScannerPage() {
             hasStartedRef.current = false
           }
 
+          // Extract token from URL or use raw text
+          // QR codes contain URLs like: http://localhost:3000/ticket/{token}
+          // or just the token UUID directly
+          let qrToken = decodedText
           try {
-            const result = await checkInByQrToken(eventId, decodedText)
+            const url = new URL(decodedText)
+            // Extract token from /ticket/{token} path
+            const pathParts = url.pathname.split('/')
+            if (pathParts[1] === 'ticket' && pathParts[2]) {
+              qrToken = pathParts[2]
+            }
+          } catch {
+            // If decodedText is not a valid URL, it might be the raw token
+            // Use it directly
+          }
+
+          try {
+            const result = await checkInByQrToken(eventId, qrToken)
             setCheckInResult({
               success: result.success,
               registrant: result.registrant,

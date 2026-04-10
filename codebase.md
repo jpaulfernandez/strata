@@ -1,12 +1,12 @@
 # Codebase Documentation
 
-This file serves as the source of truth for the EventFlow codebase. It provides a comprehensive overview of the project's architecture, technology stack, and key components.
+This file serves as the source of truth for the Strata codebase. It provides a comprehensive overview of the project's architecture, technology stack, and key components.
 
 ---
 
 ## Project Overview
 
-**EventFlow** is an event registration and check-in platform built with Next.js. It enables organizers to create events, manage registrations, and check in attendees via QR codes or manual lookup.
+**Strata** is an event registration and check-in platform built with Next.js. It enables organizers to create events, manage registrations, and check in attendees via QR codes or manual lookup.
 
 ### Key Features
 
@@ -52,15 +52,16 @@ This file serves as the source of truth for the EventFlow codebase. It provides 
       /[id]/share       # Share panel
       /[id]/registrants # Registrant list with CSV export
     /dashboard/[id]     # Live check-in dashboard
-    /scan/[id]          # QR scanner page
     /settings           # Settings pages
       /fields           # Global form fields
       /fields/new       # Create global field
       /staff            # Staff management
+      /general          # General settings (e-ticket message)
+  /scan/[id]            # Mobile-optimized QR scanner (fullscreen, bypasses admin layout)
   /e/[slug]             # Public event registration
     page.tsx            # Registration form
     /thanks             # Thank-you page with QR
-  /ticket/[qrToken]     # Public ticket page
+  /ticket/[qrToken]     # Public ticket page (mobile-friendly)
   /login                # Login page
   /signup               # Signup page
   layout.tsx            # Root layout with fonts
@@ -138,6 +139,7 @@ This file serves as the source of truth for the EventFlow codebase. It provides 
 | `checkins` | Check-in records with timestamps |
 | `vipNotifications` | VIP arrival notifications |
 | `globalFields` | Reusable form field templates |
+| `global_settings` | Global app settings (e-ticket message, etc.) |
 
 ### Events Table Fields
 
@@ -163,7 +165,7 @@ This file serves as the source of truth for the EventFlow codebase. It provides 
 ### Enums
 
 - `user_role`: `super_admin | admin | staff`
-- `event_status`: `draft | open | closed`
+- `event_status`: `draft | open | closed | ended`
 - `checkin_method`: `qr | manual_email`
 - `field_type`: `short_text | long_text | dropdown | multiple_choice | checkboxes`
 
@@ -206,6 +208,7 @@ Defined in `server/auth/rbac.ts`:
 Route protection is enforced in `app/middleware.ts`:
 
 - `/admin/*` — requires admin role
+- `/scan/*` — requires staff role (mobile-optimized scanner)
 - `/settings/*` — requires admin role
 - `/checkin/*` — requires authenticated
 - `/api/admin/*` — requires admin role
@@ -247,7 +250,7 @@ The admin layout (`app/admin/layout.tsx`) features:
 - **Floating sidebar** with glassmorphism effect (`backdrop-blur-xl`, semi-transparent background)
 - **Sticky positioning** within content area
 - **Purple gradient** for active navigation items
-- **Purple gradient text** for "EventFlow" brand
+- **Purple gradient text** for "Strata" brand
 - **Sign Out** with red hover state
 
 ---
@@ -256,10 +259,11 @@ The admin layout (`app/admin/layout.tsx`) features:
 
 ### Event List Page
 
-- **Grid/List toggle**: User preference saved to `localStorage` (key: `eventflow-events-view-mode`)
+- **Grid/List toggle**: User preference saved to `localStorage` (key: `strata-events-view-mode`)
 - **Search**: Filters by title, location, or slug
 - **Status filter**: All, Draft, Open, Closed
 - **Purple badges** for "Open" status events
+- **Hydration-safe**: Uses `mounted` state to prevent localStorage read during SSR
 
 ### Event Card
 
@@ -311,11 +315,17 @@ The admin layout (`app/admin/layout.tsx`) features:
 | `/admin/events/[id]/share` | Share event public link |
 | `/admin/events/[id]/registrants` | Registrant list with CSV export |
 | `/admin/dashboard/[id]` | Live check-in dashboard |
-| `/admin/scan/[id]` | QR scanner page |
 | `/admin/settings` | App settings |
 | `/admin/settings/fields` | Global form fields |
 | `/admin/settings/fields/new` | Create global field |
 | `/admin/settings/staff` | Staff management |
+| `/admin/settings/general` | General settings (e-ticket message) |
+
+### Protected Routes (Staff+)
+
+| Path | Description |
+|------|-------------|
+| `/scan/[id]` | Mobile-optimized QR scanner (fullscreen, bottom nav: Scanner/History/Stats/Manual) |
 
 ### Auth API
 
@@ -332,7 +342,7 @@ The admin layout (`app/admin/layout.tsx`) features:
 | `events.ts` | Event CRUD operations (create, update, delete, duplicate, status toggle) |
 | `registrants.ts` | Registration and registrant management (register, get by QR, check duplicate) |
 | `checkin.ts` | Check-in operations (QR scan, manual email, VIP toggle) |
-| `settings.ts` | Manage global settings and global fields |
+| `settings.ts` | Manage global settings, global fields, and e-ticket message |
 | `staff.ts` | Staff CRUD operations |
 | `export.ts` | CSV export functionality |
 
@@ -400,6 +410,62 @@ npm run db:migrate   # Run migrations
 npm run db:push      # Push schema changes
 npm run db:studio    # Open Drizzle Studio
 npm run db:seed      # Seed database
+```
+
+---
+
+## React Hydration Patterns
+
+### Stable IDs (Input, Textarea)
+
+Components that generate IDs must use `React.useId()` to ensure consistency between SSR and CSR:
+
+```tsx
+const generatedId = React.useId()
+const inputId = id || generatedId
+```
+
+**Never use** `Math.random()` for IDs - values differ between server and client renders.
+
+### localStorage After Mount
+
+Components reading localStorage must defer until after mount to prevent hydration mismatches:
+
+```tsx
+const [mounted, setMounted] = React.useState(false)
+const [viewMode, setViewMode] = React.useState<ViewMode>("grid")
+
+React.useEffect(() => {
+  const saved = localStorage.getItem(VIEW_MODE_KEY)
+  if (saved === "grid" || saved === "list") {
+    setViewMode(saved)
+  }
+  setMounted(true)
+}, [])
+
+// Use mounted check in render
+variant={mounted && viewMode === "grid" ? "primary" : "ghost"}
+```
+
+---
+
+## Mobile-Optimized Scanner
+
+The `/scan/[id]` route is designed for mobile use with:
+
+- **Fullscreen camera**: No sidebar, header, or navigation chrome
+- **Bottom navigation**: 4 tabs (Scanner, History, Stats, Manual)
+- **Custom QR overlay**: Centered scanning region with corner markers
+- **Slide-up attendee panel**: Shows attendee details after successful scan
+- **Html5Qrcode config**: No `qrbox` option, CSS hides library UI elements
+
+### Scanner Permissions
+
+Scanner explicitly requests camera permission before starting:
+
+```tsx
+await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+await scannerRef.current.start({ facingMode: "environment" }, { fps: 10 }, ...)
 ```
 
 ---

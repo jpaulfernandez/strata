@@ -90,6 +90,51 @@ function CheckInItem({
   )
 }
 
+// Pending registrant item (not checked in yet)
+function PendingItem({
+  registrant,
+}: {
+  registrant: Registrant
+}) {
+  const initials = `${registrant.firstName[0]}${registrant.lastName[0]}`.toUpperCase()
+
+  return (
+    <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--surface-container-low)]">
+      {/* Avatar */}
+      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center text-white font-medium text-sm">
+        {initials}
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <p className="font-medium text-[var(--on-surface)] truncate">
+            {registrant.firstName} {registrant.lastName}
+          </p>
+          {registrant.isVip && (
+            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+          )}
+        </div>
+        <p className="text-sm text-[var(--on-surface-variant)] truncate">
+          {registrant.email}
+        </p>
+      </div>
+
+      {/* Registration time */}
+      <div className="text-right shrink-0">
+        <p className="text-xs text-[var(--on-surface-variant)]">
+          {registrant.registeredAt
+            ? new Date(registrant.registeredAt).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              })
+            : "—"}
+        </p>
+      </div>
+    </div>
+  )
+}
+
 const statusColors: Record<string, "primary" | "warning" | "secondary" | "error"> = {
   draft: "secondary",
   open: "primary",
@@ -133,7 +178,18 @@ export default function DashboardPage() {
         if (!a.checkedInAt || !b.checkedInAt) return 0
         return new Date(b.checkedInAt).getTime() - new Date(a.checkedInAt).getTime()
       })
-      .slice(0, 20)
+      .slice(0, 5) // Show only 5 most recent
+  }, [registrants])
+
+  // Registrants who haven't checked in yet
+  const pendingRegistrants = React.useMemo(() => {
+    return registrants
+      .filter((r) => !r.checkedIn)
+      .sort((a, b) => {
+        // Sort by registration time (most recent first)
+        if (!a.registeredAt || !b.registeredAt) return 0
+        return new Date(b.registeredAt).getTime() - new Date(a.registeredAt).getTime()
+      })
   }, [registrants])
 
   // Registration link
@@ -260,7 +316,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Link href={`/admin/events/${eventId}/edit}`}>
+            <Link href={`/admin/events/${eventId}/edit`}>
               <Button variant="secondary">
                 Edit Event
               </Button>
@@ -394,13 +450,13 @@ export default function DashboardPage() {
         </div>
 
         {/* Check-in Feed */}
-        <Card>
+        <Card className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-[var(--on-surface)]">
               Recent Check-ins
             </h2>
             <Badge variant="secondary">
-              {recentCheckIns.length} shown
+              {stats.checkedIn} total
             </Badge>
           </div>
 
@@ -418,6 +474,36 @@ export default function DashboardPage() {
             <div className="space-y-2">
               {recentCheckIns.map((registrant) => (
                 <CheckInItem key={registrant.id} registrant={registrant} />
+              ))}
+            </div>
+          )}
+        </Card>
+
+        {/* Pending Registrations */}
+        <Card>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-[var(--on-surface)]">
+              Not Checked In
+            </h2>
+            <Badge variant="secondary">
+              {pendingRegistrants.length} remaining
+            </Badge>
+          </div>
+
+          {pendingRegistrants.length === 0 ? (
+            <div className="text-center py-8 text-[var(--on-surface-variant)]">
+              <CheckCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <p>All registrants have checked in!</p>
+              {stats.total > 0 && (
+                <p className="text-sm mt-1 text-green-600 font-medium">
+                  100% check-in rate achieved
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+              {pendingRegistrants.map((registrant) => (
+                <PendingItem key={registrant.id} registrant={registrant} />
               ))}
             </div>
           )}

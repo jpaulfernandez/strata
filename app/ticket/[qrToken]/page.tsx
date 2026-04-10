@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getRegistrantByQrToken } from "@/server/actions/registrants"
-import { getEvent } from "@/server/actions/events"
+import { getEventById } from "@/server/actions/events"
 import { getTicketMessage } from "@/server/actions/settings"
 import { generateQRCode } from "@/lib/qr"
 
@@ -31,7 +31,7 @@ export default async function TicketPage({ params }: TicketPageProps) {
   }
 
   // Get event
-  const event = await getEvent(registrant.eventId)
+  const event = await getEventById(registrant.eventId)
   if (!event) {
     notFound()
   }
@@ -57,26 +57,26 @@ export default async function TicketPage({ params }: TicketPageProps) {
 
   return (
     <div className="min-h-screen bg-[var(--surface)]">
-      <div className="max-w-sm mx-auto px-4 py-8">
+      <div className="max-w-sm mx-auto px-4 py-6 sm:py-8">
         {/* Ticket Card */}
-        <div className="rounded-[2rem] bg-[var(--surface-container-lowest)] shadow-[0_12px_40px_rgba(74,69,75,0.06)] overflow-hidden border border-[var(--outline-variant)]/15">
+        <div className="rounded-[1.5rem] sm:rounded-[2rem] bg-[var(--surface-container-lowest)] shadow-[0_12px_40px_rgba(74,69,75,0.06)] overflow-hidden border border-[var(--outline-variant)]/15">
           {/* Header */}
-          <div className="p-6 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-container)] text-white">
+          <div className="p-4 sm:p-6 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-container)] text-white">
             <p className="text-xs uppercase tracking-widest opacity-80 font-label mb-1">Event Ticket</p>
-            <h1 className="text-xl font-headline font-bold tracking-tight">{event.title}</h1>
+            <h1 className="text-lg sm:text-xl font-headline font-bold tracking-tight">{event.title}</h1>
           </div>
 
           {/* QR Code */}
-          <div className="p-6 flex flex-col items-center">
-            <div className="p-4 rounded-2xl bg-white shadow-inner">
+          <div className="p-4 sm:p-6 flex flex-col items-center">
+            <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-white shadow-inner">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={qrCodeDataUrl}
                 alt="Ticket QR code"
-                className="w-48 h-48"
+                className="w-40 h-40 sm:w-48 sm:h-48"
               />
             </div>
-            <p className="text-xs text-[var(--on-surface-variant)] mt-4 font-label uppercase tracking-wider text-center">
+            <p className="text-xs text-[var(--on-surface-variant)] mt-3 sm:mt-4 font-label uppercase tracking-wider text-center">
               Scan this code at check-in
             </p>
           </div>
@@ -85,17 +85,17 @@ export default async function TicketPage({ params }: TicketPageProps) {
           <div className="border-t border-dashed border-[var(--outline-variant)] mx-6" />
 
           {/* Details */}
-          <div className="p-6 space-y-4">
+          <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
             {/* Attendee */}
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-container)] flex items-center justify-center text-white font-bold text-lg">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-container)] flex items-center justify-center text-white font-bold text-base sm:text-lg">
                 {initials}
               </div>
               <div>
                 <p className="text-xs text-[var(--on-surface-variant)] uppercase tracking-widest font-label">
                   Attendee
                 </p>
-                <p className="text-lg font-headline font-bold text-[var(--on-surface)]">
+                <p className="text-base sm:text-lg font-headline font-bold text-[var(--on-surface)]">
                   {registrant.firstName} {registrant.lastName}
                 </p>
               </div>
@@ -141,7 +141,7 @@ export default async function TicketPage({ params }: TicketPageProps) {
 
             {/* VIP Badge */}
             {registrant.isVip && (
-              <div className="inline-flex items-center px-4 py-2 rounded-full bg-[var(--secondary-container)] text-[var(--on-secondary-container)] text-sm font-bold">
+              <div className="inline-flex items-center px-3 sm:px-4 py-2 rounded-full bg-[var(--secondary-container)] text-[var(--on-secondary-container)] text-sm font-bold">
                 <svg className="w-4 h-4 mr-2 fill-current" viewBox="0 0 24 24">
                   <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                 </svg>
